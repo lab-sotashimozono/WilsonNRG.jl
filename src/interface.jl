@@ -201,14 +201,20 @@ end
 # ---- spectral layer (Axis 4) ----------------------------------------------
 
 """
-    spectral(method::AbstractSpectralMethod, result::NRGResult, op) -> (ω, A)
+    spectral(method::AbstractSpectralMethod, model, alg; kwargs...) -> (; ω, A)
 
-Impurity spectral function from an NRG flow under formulation `method`
-(Axis 4). Implemented per method from Stage 3 (`FDM` first).
+Impurity spectral function `A(ω)` from an NRG run under formulation `method`
+(Axis 4). The method runs its own sweep (it needs the per-shell eigenbases that
+`nrg_solve` discards). `BHP` (Bulla–Hewson–Pruschke, T=0) is implemented; `FDM`,
+`CFS`, `DMNRG` raise [`EngineUnimplemented`](@ref).
 """
 function spectral end
-function spectral(method::AbstractSpectralMethod, ::NRGResult, op)
+function spectral(
+    method::AbstractSpectralMethod, ::AbstractImpurityModel, ::NRGAlgorithm; kwargs...
+)
     throw(
-        EngineUnimplemented("spectral via $(typeof(method)) — roadmap Stage 3 (FDM first).")
+        EngineUnimplemented(
+            "spectral via $(typeof(method)) is not implemented; BHP (T=0) is available."
+        ),
     )
 end
