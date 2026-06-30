@@ -106,8 +106,11 @@ end
 """
     ZitkoPruschke(Λ) <: AbstractDiscretization
 
-Adaptive discretization for arbitrary `Δ(ω)` (Žitko & Pruschke, PRB 79, 085106
-(2009)). **Planned** (Stage 5).
+Improved discretization (Žitko & Pruschke, PRB 79, 085106 (2009)): the representative
+energies are chosen so the z-averaged band is reproduced *exactly*, `A_{f0}(ω) = ρ(ω)`,
+removing the band-edge artefacts of the conventional/Campo–Oliveira schemes (their Eq. 35/36).
+The flat-band band-DOS reproduction is available via [`band_dos`](@ref); the full adaptive
+chain for arbitrary `Δ(ω)` is future work.
 """
 struct ZitkoPruschke <: AbstractDiscretization
     Λ::Float64
