@@ -40,6 +40,7 @@ export wilson_chain, asymptotic_hopping, hybridization, bath_coupling, nrg_solve
 export shell_scale, thermodynamics, magnetization
 export green_function, self_energy, hybridization_function, compare_self_energy
 export default_spectral_method, default_self_energy_method
+export clebsch_gordan, wigner3j, wigner6j
 
 include("bootstrap.jl")
 include("types.jl")
@@ -52,5 +53,6 @@ include("spectral.jl")
 include("cfs.jl")
 include("fdm.jl")
 include("self_energy.jl")
+include("su2.jl")
 
 end # module WilsonNRG
