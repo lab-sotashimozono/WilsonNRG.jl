@@ -12,7 +12,9 @@
 #  (2S+1)-expanded) are the next step; until then `U1SU2` raises `EngineUnimplemented`.
 # ===========================================================================
 
-# n! as Float64 (argument is integer-valued; good to 170! without overflow).
+# n! in Float64: exact for n ≤ 22, rounded above, and Inf at n ≥ 171. `n` is
+# integer-valued by construction (the Racah-sum guards). The largest argument for
+# NRG-kept spins (≈ 3S+1 in _Δcoef, 2S+2 in the 6j sum) stays well under 171.
 _facf(n) = prod(1.0:float(n))
 
 _triangle(a, b, c) = (a + b ≥ c) && (a + c ≥ b) && (b + c ≥ a) && isinteger(a + b + c)
@@ -41,23 +43,17 @@ function wigner3j(j1, j2, j3, m1, m2, m3)
         isinteger(j3 + m3)
     ) || return 0.0
     s = 0.0
-    for t in 0:30
+    # Sum over the analytic support of t (where all five factorial arguments are ≥ 0).
+    # These bounds are exact; a fixed cap would silently drop terms for large spins.
+    t_lo = Int(max(0, j2 - j3 - m1, j1 - j3 + m2))
+    t_hi = Int(min(j1 + j2 - j3, j1 - m1, j2 + m2))
+    for t in t_lo:t_hi
         d = (j3 - j2 + t + m1, j3 - j1 + t - m2, j1 + j2 - j3 - t, j1 - t - m1, j2 - t + m2)
-        all(x -> x ≥ 0 && isinteger(x), d) || continue
-        s +=
-            (-1)^t /
-            (_facf(t) * _facf(d[1]) * _facf(d[2]) * _facf(d[3]) * _facf(d[4]) * _facf(d[5]))
+        s += (-1)^t / (_facf(t) * prod(_facf, d))
     end
     return (-1)^(j1 - j2 - m3) *
            _Δcoef(j1, j2, j3) *
-           sqrt(
-               _facf(j1 + m1) *
-               _facf(j1 - m1) *
-               _facf(j2 + m2) *
-               _facf(j2 - m2) *
-               _facf(j3 + m3) *
-               _facf(j3 - m3),
-           ) *
+           sqrt(prod(_facf, (j1 + m1, j1 - m1, j2 + m2, j2 - m2, j3 + m3, j3 - m3))) *
            s
 end
 
@@ -73,15 +69,20 @@ end
 """
     wigner6j(a, b, c, d, e, f) -> Float64
 
-Wigner 6-j symbol `{a b c; d e f}` (Racah formula) — the recoupling coefficient
-that appears when adding a Wilson site to the kept multiplets.
+Wigner 6-j symbol `{a b c; d e f}` (Racah formula). Arguments are multiples of ½.
+In the `U1SU2` engine this is the recoupling coefficient for attaching a Wilson
+site, but the function itself is the general angular-momentum 6-j.
 """
 function wigner6j(a, b, c, d, e, f)
     (
         _triangle(a, b, c) && _triangle(c, d, e) && _triangle(a, e, f) && _triangle(b, d, f)
     ) || return 0.0
     s = 0.0
-    for t in 0:30
+    # Sum over the analytic support of t (where all seven factorial arguments are ≥ 0).
+    # These bounds are exact; a fixed cap would silently drop terms for large spins.
+    t_lo = Int(max(a + b + c, c + d + e, a + e + f, b + d + f))
+    t_hi = Int(min(a + b + d + e, a + c + d + f, b + c + e + f))
+    for t in t_lo:t_hi
         u = (
             t - a - b - c,
             t - c - d - e,
@@ -91,17 +92,7 @@ function wigner6j(a, b, c, d, e, f)
             a + c + d + f - t,
             b + c + e + f - t,
         )
-        all(x -> x ≥ 0 && isinteger(x), u) || continue
-        s +=
-            (-1)^t * _facf(t + 1) / (
-                _facf(u[1]) *
-                _facf(u[2]) *
-                _facf(u[3]) *
-                _facf(u[4]) *
-                _facf(u[5]) *
-                _facf(u[6]) *
-                _facf(u[7])
-            )
+        s += (-1)^t * _facf(t + 1) / prod(_facf, u)
     end
     return _Δcoef(a, b, c) * _Δcoef(c, d, e) * _Δcoef(a, e, f) * _Δcoef(b, d, f) * s
 end

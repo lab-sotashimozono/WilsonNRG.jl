@@ -23,6 +23,18 @@ using WilsonNRG: clebsch_gordan, wigner3j, wigner6j
     @test wigner6j(1 // 2, 1 // 2, 0, 1 // 2, 1 // 2, 1) ≈ 1 / 2
     @test wigner6j(1, 1, 0, 1, 1, 1) ≈ -1 / 3                                   # {1 1 0;1 1 1}
 
+    # large spins exercise the full Racah summation range — regression for the
+    # analytic t-bounds (a fixed 0:30 cap silently truncated these terms).
+    @test wigner6j(8, 8, 8, 8, 8, 8) ≈ -0.012652080723153538 atol = 1e-10       # t ∈ 24:32
+    @test wigner3j(16, 16, 0, -16, 16, 0) ≈ 1 / sqrt(33) atol = 1e-10           # single term at t=32
+
+    # ---- 3j directly (independent of the clebsch_gordan wrapper) ----
+    @test wigner3j(1 // 2, 1 // 2, 0, 1 // 2, -1 // 2, 0) ≈ 1 / sqrt(2)
+    @test wigner3j(1 // 2, 1 // 2, 1, 1 // 2, -1 // 2, 0) ≈ 1 / sqrt(6)
+    @test wigner3j(1, 1, 1, 0, 0, 0) == 0.0                                      # parity zero (j-sum odd)
+    @test wigner3j(1 // 2, 1 // 2, 1, 1 // 2, -1 // 2, 0) ≈
+          wigner3j(1 // 2, 1, 1 // 2, -1 // 2, 0, 1 // 2)                        # cyclic invariance
+
     # triangle violations vanish
     @test clebsch_gordan(1 // 2, 1 // 2, 1 // 2, 1 // 2, 0, 0) == 0.0           # |1/2-1/2|..=0 only
     @test wigner6j(1 // 2, 1 // 2, 5, 1 // 2, 1 // 2, 1) == 0.0
@@ -31,6 +43,7 @@ using WilsonNRG: clebsch_gordan, wigner3j, wigner6j
     @test WilsonNRG.multiplicity(U1SU2(), (1, 1 // 2)) == 2
     @test WilsonNRG.multiplicity(U1SU2(), (0, 0 // 1)) == 1
     @test WilsonNRG.multiplicity(U1SU2(), (1, 3 // 2)) == 4
+    @test WilsonNRG.multiplicity(U1SU2(), (2, 1 // 1)) == 3                      # integer S=1
 
     # ---- reduced-ME (Wigner-Eckart) layer: f† reduced MEs reproduce the full single-site c† ----
     @testset "reduced f† reproduces full c† (Wigner-Eckart)" begin
