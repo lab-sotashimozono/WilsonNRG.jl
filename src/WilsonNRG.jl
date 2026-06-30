@@ -30,13 +30,16 @@ export AbstractImpurityModel,
 export AndersonModel, KondoModel
 export WilsonLog, CampoOliveira, ZitkoPruschke
 export U1U1, U1SU2, SU2SU2
-export BHP, DMNRG, CFS, FDM
+export AbstractSpectralMethod, BHP, DMNRG, CFS, FDM
+export AbstractSelfEnergyMethod, SelfEnergyTrick, Dyson
 export KeepN, EnergyCut
 
 # --- core objects + driver ---
 export WilsonChain, NRGAlgorithm, NRGResult, EngineUnimplemented
 export wilson_chain, asymptotic_hopping, hybridization, bath_coupling, nrg_solve, spectral
 export shell_scale, thermodynamics, magnetization
+export green_function, self_energy, hybridization_function, compare_self_energy
+export default_spectral_method, default_self_energy_method
 
 include("bootstrap.jl")
 include("types.jl")
@@ -46,5 +49,6 @@ include("engine_u1u1.jl")
 include("thermodynamics.jl")
 include("kondo.jl")
 include("spectral.jl")
+include("self_energy.jl")
 
 end # module WilsonNRG

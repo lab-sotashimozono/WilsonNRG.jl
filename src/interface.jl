@@ -198,23 +198,5 @@ function nrg_solve(model::AbstractImpurityModel, alg::NRGAlgorithm)
     return NRGResult(chain, alg, energies, kept, levels, scale)
 end
 
-# ---- spectral layer (Axis 4) ----------------------------------------------
-
-"""
-    spectral(method::AbstractSpectralMethod, model, alg; kwargs...) -> (; ω, A)
-
-Impurity spectral function `A(ω)` from an NRG run under formulation `method`
-(Axis 4). The method runs its own sweep (it needs the per-shell eigenbases that
-`nrg_solve` discards). `BHP` (Bulla–Hewson–Pruschke, T=0) is implemented; `FDM`,
-`CFS`, `DMNRG` raise [`EngineUnimplemented`](@ref).
-"""
-function spectral end
-function spectral(
-    method::AbstractSpectralMethod, ::AbstractImpurityModel, ::NRGAlgorithm; kwargs...
-)
-    throw(
-        EngineUnimplemented(
-            "spectral via $(typeof(method)) is not implemented; BHP (T=0) is available."
-        ),
-    )
-end
+# The dynamical layer (green_function / spectral / self_energy, Axis 4) is in
+# src/spectral.jl and src/self_energy.jl.
