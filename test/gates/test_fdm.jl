@@ -37,8 +37,21 @@ using WilsonNRG, Test
     A_at(x) = A[argmin(abs.(ω .- x))]
     @test A_at(Γ) > 5 * A_at(1.0)                               # a resonance, not flat
 
-    # ---- (5) clean dispatch: the self-energy axis works for FDM and CFS via Dyson ----
+    # ---- (5) clean dispatch + correctness: self-energy via Dyson works for FDM and CFS.
+    # At U=0 the exact Σ=0, so Dyson (broadening-noisy) must stay FINITE and bounded — a
+    # garbage G from a bad correlator would blow up here, which length/eltype alone miss.
     seF = self_energy(FDM(), m, alg; via=Dyson(), T, ω=ω)
     @test length(seF.Σ) == length(ω) && eltype(seF.Σ) <: Complex
-    @test length(self_energy(CFS(), m, alg; via=Dyson(), ω=ω).Σ) == length(ω)
+    @test all(isfinite, seF.Σ) && maximum(abs, seF.Σ) < 1.0       # bounded broadening noise (≈0.1)
+    seC = self_energy(CFS(), m, alg; via=Dyson(), ω=ω)
+    @test all(isfinite, seC.Σ) && maximum(abs, seC.Σ) < 1.0       # (≈0.6)
+    # the trick stays BHP-only — encoded in dispatch, throws cleanly (not a MethodError)
+    @test_throws WilsonNRG.EngineUnimplemented self_energy(FDM(), m, alg; via=SelfEnergyTrick(), T)
+
+    # ---- (6) FDM thermal density matrix is normalized: Σ terminal weights = Tr ρ = 1
+    # (completeness, the basis of the sum rule — asserted directly, not just end-to-end) ----
+    shells = WilsonNRG._cfs_collect(m, alg)
+    logw, logZ = WilsonNRG._fdm_log_weights(shells, WilsonNRG._fdm_abs_energies(shells), 1 / T)
+    trρ = sum(sum(isfinite(x) ? exp(x - logZ) : 0.0 for x in lw) for d in logw for lw in values(d))
+    @test isapprox(trρ, 1.0; atol=1.0e-10)
 end

@@ -76,6 +76,7 @@ function _fdm_reduced_dms(shells::Vector{_CFSShell}, logw, logZ)
         child = shells[n + 1]
         ρK = Dict(P => zeros(length(idx)) for (P, idx) in sh.plan)   # kept-position indexed
         for (nqn, V) in child.vecs
+            haskey(ρ[n + 1], nqn) || continue          # vals/vecs share keys; guard the invariant
             ρc = ρ[n + 1][nqn]
             for (P, s, r) in child.seg[nqn]
                 haskey(ρK, P) || continue
@@ -148,27 +149,34 @@ function _fdm_correlator(poles, ωs, b, ω0)
 end
 
 """
-    green_function(::FDM, model::AndersonModel, alg; T=0.0, b=0.6, ω=nothing) -> (; ω, G)
+    green_function(::FDM, model::AndersonModel, alg; T=0.0, b=0.6, ω=nothing, ω0=nothing) -> (; ω, G)
 
 Retarded impurity Green's function via the full-density-matrix (FDM) method at
 temperature `T` (Weichselbaum & von Delft, PRL 99, 076402 (2007)). The complete basis
 of discarded states is weighted by the full thermal density matrix, so the spectral sum
 rule `∫A_σ dω = 1` holds at any `T` (completeness). `T=0` delegates to the complete-basis
-[`CFS`](@ref) (the exact ground-state projector). Near `ω=0` the resolution is set by `T`.
+[`CFS`](@ref) (the exact ground-state projector). Near `ω=0` the resolution is set by the
+two-regime crossover `ω0` (default `max(T, 3·ω_min)`, floored at the grid resolution so
+the quasi-elastic weight is never broadened below the grid spacing and silently lost).
 Needs `U1U1`. `A(ω) = -Im G/π` is [`spectral`](@ref).
 """
 function green_function(
-    ::FDM, model::AndersonModel, alg::NRGAlgorithm; T::Real=0.0, b::Real=0.6, ω=nothing
+    ::FDM, model::AndersonModel, alg::NRGAlgorithm;
+    T::Real=0.0, b::Real=0.6, ω=nothing, ω0=nothing,
 )
     alg.symmetry isa U1U1 ||
         throw(EngineUnimplemented("FDM green_function needs U1U1 (got $(typeof(alg.symmetry)))"))
     T ≥ 0 || throw(ArgumentError("FDM: temperature T must be ≥ 0 (got $T)"))
     T == 0 && return green_function(CFS(), model, alg; b, ω)         # T=0 ≡ CFS (exact GS projector)
     ωs = ω === nothing ? _default_omega(model, alg) : collect(float.(ω))
+    # crossover ω₀ ~ T, floored at the grid resolution: if T is below the lowest grid scale
+    # the linear-Gaussian quasi-elastic weight would fall between grid points and vanish silently.
+    ωmin = model.D * alg.discretization.Λ^(-alg.nsites / 2) / 2
+    ω0eff = ω0 === nothing ? max(T, 3 * ωmin) : ω0
     shells = _cfs_collect(model, alg)
     Eabs = _fdm_abs_energies(shells)
     logw, logZ = _fdm_log_weights(shells, Eabs, 1 / T)
     ρ = _fdm_reduced_dms(shells, logw, logZ)
     poles = _fdm_poles(shells, ρ, 1)                                 # spin ↑ (per-spin A)
-    return (; ω=ωs, G=_fdm_correlator(poles, ωs, b, T))
+    return (; ω=ωs, G=_fdm_correlator(poles, ωs, b, ω0eff))
 end

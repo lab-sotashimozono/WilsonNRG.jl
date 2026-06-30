@@ -54,44 +54,65 @@ function self_energy(model::AbstractImpurityModel, alg::NRGAlgorithm; kw...)
     self_energy(default_spectral_method(), model, alg; kw...)
 end
 
-function _self_energy(::SelfEnergyTrick, method, model, alg, ωs, b, window; kw...)
-    method isa BHP || throw(
-        EngineUnimplemented(
-            "the self-energy trick needs BHP's F-correlator (got $(typeof(method))); " *
-            "use via=Dyson() for a generic G-based self-energy",
-        ),
-    )
+# The trick needs the F-correlator, currently produced only by BHP — encoded in DISPATCH
+# (a (::SelfEnergyTrick, ::BHP) method + an AbstractSpectralMethod fallback that throws) rather
+# than a runtime `isa` guard, so the precondition is a dispatch invariant.
+function _self_energy(::SelfEnergyTrick, ::BHP, model, alg, ωs, b, window; kw...)
     poles = _gf_poles(model, alg; window, with_F=true)
     G = _correlator(poles, ωs, b, 2)
     F = _correlator(poles, ωs, b, 3)
     return (; ω=ωs, Σ=model.U .* F ./ G)
 end
-function _self_energy(::Dyson, method, model, alg, ωs, b, window; kw...)
+function _self_energy(
+    ::SelfEnergyTrick, method::AbstractSpectralMethod, model, alg, ωs, b, window; kw...
+)
+    throw(
+        EngineUnimplemented(
+            "the self-energy trick needs the F-correlator, currently produced only by BHP " *
+            "(got $(typeof(method))); use via=Dyson() for a generic G-based self-energy",
+        ),
+    )
+end
+
+# magnitude-floored reciprocal: keeps 1/G finite where G→0 (band edges / spectral gaps),
+# so the (admittedly noisy) Dyson self-energy never blows up to Inf on a user-supplied grid.
+function _safe_invG(z::Complex, floor::Real)
+    a = abs(z)
+    a ≥ floor && return 1 / z
+    a == 0 && return complex(1 / floor)
+    return conj(z) / (a * floor)
+end
+function _self_energy(::Dyson, method::AbstractSpectralMethod, model, alg, ωs, b, window; kw...)
     G = green_function(method, model, alg; b, ω=ωs, kw...).G        # any spectral method's G
     Δ = hybridization_function.(Ref(model), ωs)
-    return (; ω=ωs, Σ=[ωs[i] - model.εd - Δ[i] - 1 / G[i] for i in eachindex(ωs)])
+    gfloor = 1.0e-12 * maximum(abs, G)
+    return (; ω=ωs, Σ=[ωs[i] - model.εd - Δ[i] - _safe_invG(G[i], gfloor) for i in eachindex(ωs)])
 end
 
 """
-    compare_self_energy(model, alg; vias=(SelfEnergyTrick(), Dyson()), b=0.6, window=0.7, ω=nothing)
+    compare_self_energy(model, alg; method=default_spectral_method(), vias=(SelfEnergyTrick(), Dyson()), b=0.6, window=0.7, ω=nothing, kw...)
         -> (; ω, Σ, disagreement)
 
 Run several self-energy formulations on a common grid and report `Σ` per method plus
 the max pairwise `|ΔReΣ|` near `ω=0`. Cross-method agreement is the robustness signal
 (at `U=0` the trick is exactly 0 while Dyson carries the broadening error — the gap is
-the point).
+the point). `method` is the spectral method building `G` (default `BHP`); for a non-BHP
+`method` pass `vias=(Dyson(),)` (the trick is BHP-only) and any method kwargs (e.g. `T`).
 """
 function compare_self_energy(
     model::AbstractImpurityModel,
     alg::NRGAlgorithm;
+    method::AbstractSpectralMethod=default_spectral_method(),
     vias=(SelfEnergyTrick(), Dyson()),
     b::Real=0.6,
     window::Real=0.7,
     ω=nothing,
+    kw...,
 )
     ωs = ω === nothing ? _default_omega(model, alg) : collect(float.(ω))
     Σ = Dict(
-        nameof(typeof(v)) => self_energy(model, alg; via=v, b, window, ω=ωs).Σ for v in vias
+        nameof(typeof(v)) => self_energy(method, model, alg; via=v, b, window, ω=ωs, kw...).Σ
+        for v in vias
     )
     near0 = findall(x -> abs(x) < 0.1, ωs)
     ks = collect(keys(Σ))
