@@ -161,8 +161,11 @@ function nrg_solve(model::AbstractImpurityModel, alg::NRGAlgorithm)
     chain = wilson_chain(alg.discretization, model, alg.nsites)
     sym = alg.symmetry
     state = impurity_init(model, sym, chain)        # throws for unwired symmetries
-    sqrtΛ = sqrt(alg.discretization.Λ)
+    Λ = alg.discretization.Λ
+    sqrtΛ = sqrt(Λ)
     energies = Vector{Vector{Float64}}()
+    levels = Vector{Vector{Tuple{Float64,Int}}}()
+    scale = Float64[]
     kept = Int[]
     for n in 0:(alg.nsites - 1)
         coupling = n == 0 ? bath_coupling(model) : chain.hopping[n]
@@ -171,11 +174,13 @@ function nrg_solve(model::AbstractImpurityModel, alg::NRGAlgorithm)
         diag = diagonalize_blocks(enl, sym)
         plan = truncation_plan(diag.vals, alg.truncation, sym)
         state = update_operators(diag, plan, sym)        # truncates + subtracts ground energy
-        spec = sort!(reduce(vcat, values(state.E)))      # kept spectrum, relative to ground
-        push!(energies, spec)
-        push!(kept, length(spec))
+        lv = block_levels(state, sym)                    # (energy, 2Sₙ) pairs, relative to ground
+        push!(levels, lv)
+        push!(energies, sort!([e for (e, _) in lv]))
+        push!(kept, length(lv))
+        push!(scale, shell_scale(alg.discretization, n))
     end
-    return NRGResult(chain, alg, energies, kept)
+    return NRGResult(chain, alg, energies, kept, levels, scale)
 end
 
 # ---- spectral layer (Axis 4) ----------------------------------------------

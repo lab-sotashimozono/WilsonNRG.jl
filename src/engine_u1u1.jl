@@ -140,6 +140,15 @@ function add_site(st::U1U1State, ::U1U1; coupling::Real, rescale::Real, onsite::
     return U1U1Enlarged(H, seg)
 end
 
+"""
+    block_levels(state, sym) -> Vector{Tuple{Float64,Int}}
+
+The kept spectrum as `(energy, 2Sₙ)` pairs — the quantum-number-resolved levels
+the thermodynamics/spectral layers consume. For `U1U1`, `2Sₙ = D` is the block
+label.
+"""
+block_levels(st::U1U1State, ::U1U1) = [(e, D) for ((Q, D), ev) in st.E for e in ev]
+
 function diagonalize_blocks(enl::U1U1Enlarged, ::U1U1)
     vals = Dict{NTuple{2,Int},Vector{Float64}}()
     vecs = Dict{NTuple{2,Int},Matrix{Float64}}()
