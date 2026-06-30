@@ -25,12 +25,16 @@ in `F/G`). [`Dyson`](@ref) is offered for comparison.
 default_self_energy_method() = SelfEnergyTrick()
 
 """
-    self_energy([method,] model, alg; via=default_self_energy_method(), b=0.6, window=0.7, ω=nothing) -> (; ω, Σ)
+    self_energy([method,] model, alg; via=default_self_energy_method(), b=0.6, window=0.7, ω=nothing, kw...) -> (; ω, Σ)
 
 Impurity self-energy `Σ_σ(ω)`. `method` is the spectral method building `G` (default
 `BHP`); `via` is how `Σ` is extracted: `SelfEnergyTrick()` (robust, `Σ=U·F/G`) or
 `Dyson()` (`Σ=ω-ε_d-Δ-1/G`). At the symmetric point a Fermi liquid gives
 `ReΣ(0)=U/2`, `ImΣ(0)=0`; `U=0 ⇒ Σ=0` (exact for the trick).
+
+Dyson dispatches on `method` generically (any spectral method that yields `G`, so
+`CFS`/`FDM` work — pass their parameters via `kw...`, e.g. `T` for `FDM`); the trick
+needs the second correlator `F`, currently produced only by `BHP`.
 """
 function self_energy(
     method::AbstractSpectralMethod,
@@ -40,29 +44,30 @@ function self_energy(
     b::Real=0.6,
     window::Real=0.7,
     ω=nothing,
+    kw...,
 )
-    method isa BHP || throw(
-        EngineUnimplemented(
-            "self_energy currently needs BHP for G (got $(typeof(method)))"
-        ),
-    )
     alg.symmetry isa U1U1 || throw(EngineUnimplemented("self_energy needs U1U1"))
     ωs = ω === nothing ? _default_omega(model, alg) : collect(float.(ω))
-    return _self_energy(via, model, alg, ωs, b, window)
+    return _self_energy(via, method, model, alg, ωs, b, window; kw...)
 end
 function self_energy(model::AbstractImpurityModel, alg::NRGAlgorithm; kw...)
     self_energy(default_spectral_method(), model, alg; kw...)
 end
 
-function _self_energy(::SelfEnergyTrick, model, alg, ωs, b, window)
+function _self_energy(::SelfEnergyTrick, method, model, alg, ωs, b, window; kw...)
+    method isa BHP || throw(
+        EngineUnimplemented(
+            "the self-energy trick needs BHP's F-correlator (got $(typeof(method))); " *
+            "use via=Dyson() for a generic G-based self-energy",
+        ),
+    )
     poles = _gf_poles(model, alg; window, with_F=true)
     G = _correlator(poles, ωs, b, 2)
     F = _correlator(poles, ωs, b, 3)
     return (; ω=ωs, Σ=model.U .* F ./ G)
 end
-function _self_energy(::Dyson, model, alg, ωs, b, window)
-    poles = _gf_poles(model, alg; window, with_F=false)
-    G = _correlator(poles, ωs, b, 2)
+function _self_energy(::Dyson, method, model, alg, ωs, b, window; kw...)
+    G = green_function(method, model, alg; b, ω=ωs, kw...).G        # any spectral method's G
     Δ = hybridization_function.(Ref(model), ωs)
     return (; ω=ωs, Σ=[ωs[i] - model.εd - Δ[i] - 1 / G[i] for i in eachindex(ωs)])
 end

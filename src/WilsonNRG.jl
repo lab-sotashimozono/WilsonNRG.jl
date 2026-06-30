@@ -50,6 +50,7 @@ include("thermodynamics.jl")
 include("kondo.jl")
 include("spectral.jl")
 include("cfs.jl")
+include("fdm.jl")
 include("self_energy.jl")
 
 end # module WilsonNRG
