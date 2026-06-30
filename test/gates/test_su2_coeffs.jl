@@ -31,4 +31,19 @@ using WilsonNRG: clebsch_gordan, wigner3j, wigner6j
     @test WilsonNRG.multiplicity(U1SU2(), (1, 1 // 2)) == 2
     @test WilsonNRG.multiplicity(U1SU2(), (0, 0 // 1)) == 1
     @test WilsonNRG.multiplicity(U1SU2(), (1, 3 // 2)) == 4
+
+    # ---- reduced-ME (Wigner-Eckart) layer: f† reduced MEs reproduce the full single-site c† ----
+    @testset "reduced f† reproduces full c† (Wigner-Eckart)" begin
+        R = WilsonNRG._ELECTRON_REDUCED_FDAG
+        # ⟨S′Sz′|c†_σ|S Sz⟩ = CG(S Sz; ½ σ | S′ Sz′)·R[(Q,S)]; check all four nonzero c† elements
+        cases = [  # (S, Sz, σ, S′, Sz′, Q_src, full c† element)
+            (0 // 1, 0 // 1, 1 // 2, 1 // 2, 1 // 2, 0, 1.0),    # c†↑|0⟩=|↑⟩
+            (0 // 1, 0 // 1, -1 // 2, 1 // 2, -1 // 2, 0, 1.0),  # c†↓|0⟩=|↓⟩
+            (1 // 2, -1 // 2, 1 // 2, 0 // 1, 0 // 1, 1, 1.0),   # c†↑|↓⟩=|↑↓⟩
+            (1 // 2, 1 // 2, -1 // 2, 0 // 1, 0 // 1, 1, -1.0),  # c†↓|↑⟩=−|↑↓⟩
+        ]
+        for (S, Sz, σ, S′, Sz′, Q, full) in cases
+            @test clebsch_gordan(S, Sz, 1 // 2, σ, S′, Sz′) * R[(Q, S)] ≈ full atol = 1e-12
+        end
+    end
 end

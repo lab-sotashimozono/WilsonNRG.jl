@@ -109,5 +109,11 @@ end
 # Electron-site SU(2) multiplets (charge Q, spin S): |0⟩=(0,0), {|↑⟩,|↓⟩}=(1,½), |↑↓⟩=(2,0).
 const _ELECTRON_MULTIPLETS = ((0, 0 // 1), (1, 1 // 2), (2, 0 // 1))
 
+# Reduced matrix elements ⟨(Q+1,S′)||f†||(Q,S)⟩ of the electron creation operator (Wigner-Eckart,
+# ⟨S′Sz′|c†_σ|S Sz⟩ = CG(S Sz;½σ|S′Sz′)·⟨S′||f†||S⟩). Fixed to reproduce the full c† (verified in
+# test/gates/test_su2_coeffs.jl). The building block of the U1SU2 operator layer; the 6j hopping
+# recoupling on add_site (validated against the U1U1 spectrum) is the remaining engine step.
+const _ELECTRON_REDUCED_FDAG = Dict((0, 0 // 1) => 1.0, (1, 1 // 2) => -sqrt(2.0))
+
 "`multiplicity(::U1SU2, (Q,S))` = 2S+1 — a spin-S multiplet is (2S+1) physical states."
 multiplicity(::U1SU2, qn) = Int(2 * qn[2] + 1)
