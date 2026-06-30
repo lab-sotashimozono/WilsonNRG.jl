@@ -88,6 +88,32 @@ function truncate_spectrum(energies::AbstractVector{<:Real}, trunc::EnergyCut)
     return findall(≤(trunc.Ecut), energies)
 end
 
+"""
+    truncation_plan(vals::Dict{K,Vector{Float64}}, trunc) -> Dict{K,Vector{Int}}
+
+Apply a truncation policy *across* symmetry blocks: flatten the per-block
+energies, pick the global survivors via [`truncate_spectrum`](@ref), and map them
+back to per-block kept indices. Symmetry-agnostic — any block-labelled spectrum
+works, so a new symmetry reuses it unchanged.
+"""
+function truncation_plan(vals::Dict{K,Vector{Float64}}, trunc::AbstractTruncation) where {K}
+    flat = Float64[]
+    owner = Tuple{K,Int}[]
+    for (q, ev) in vals, (i, e) in enumerate(ev)
+        push!(flat, e)
+        push!(owner, (q, i))
+    end
+    plan = Dict{K,Vector{Int}}()
+    for k in truncate_spectrum(flat, trunc)
+        q, i = owner[k]
+        push!(get!(plan, q, Int[]), i)
+    end
+    for q in keys(plan)
+        sort!(plan[q])
+    end
+    return plan
+end
+
 # ---- the scheme ------------------------------------------------------------
 
 """
@@ -99,21 +125,36 @@ diagonalize, rescale by `√Λ`, and truncate.
 ```
 chain = wilson_chain(alg.discretization, model, alg.nsites)
 state = impurity_init(model, alg.symmetry, chain)
-for n in 1:alg.nsites
-    state    = add_site(state, chain, n, alg.symmetry)
-    spectrum = diagonalize_blocks(state, alg.symmetry)
-    keep     = truncate_spectrum(spectrum, alg.truncation)
-    state    = update_operators(state, keep, alg.symmetry)   # + √Λ rescale
+for n in 0:(alg.nsites - 1)                                   # attach impurity↔f₀, then f₀↔f₁, …
+    enl  = add_site(state, alg.symmetry; coupling, rescale, onsite)   # √Λ rescale + ξ-hopping
+    diag = diagonalize_blocks(enl, alg.symmetry)
+    plan = truncation_plan(diag.vals, alg.truncation)
+    state = update_operators(diag, plan, alg.symmetry)
 end
 ```
 
-The deterministic steps run today; the many-body seam raises
-[`EngineUnimplemented`](@ref) until the symmetry layer lands (see the roadmap).
+Wired for `WilsonLog` + `U1U1` + `AndersonModel` (Stage 1). Other symmetries raise
+[`EngineUnimplemented`](@ref) until their layer lands (see the roadmap).
 """
 function nrg_solve(model::AbstractImpurityModel, alg::NRGAlgorithm)
     chain = wilson_chain(alg.discretization, model, alg.nsites)
-    _state = impurity_init(model, alg.symmetry, chain)   # Stage 1+
-    return _state # unreachable until the engine is wired; shape is NRGResult
+    sym = alg.symmetry
+    state = impurity_init(model, sym, chain)        # throws for unwired symmetries
+    sqrtΛ = sqrt(alg.discretization.Λ)
+    energies = Vector{Vector{Float64}}()
+    kept = Int[]
+    for n in 0:(alg.nsites - 1)
+        coupling = n == 0 ? bath_coupling(model) : chain.hopping[n]
+        rescale = n == 0 ? 1.0 : sqrtΛ
+        enl = add_site(state, sym; coupling, rescale, onsite=chain.onsite[n + 1])
+        diag = diagonalize_blocks(enl, sym)
+        plan = truncation_plan(diag.vals, alg.truncation)
+        spec = sort!(reduce(vcat, (diag.vals[q][plan[q]] for q in keys(plan))))
+        push!(energies, spec)
+        push!(kept, length(spec))
+        state = update_operators(diag, plan, sym)
+    end
+    return NRGResult(chain, alg, energies, kept)
 end
 
 # ---- spectral layer (Axis 4) ----------------------------------------------
