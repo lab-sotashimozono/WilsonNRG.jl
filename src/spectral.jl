@@ -110,8 +110,9 @@ end
 """
     default_spectral_method() -> AbstractSpectralMethod
 
-The robust default spectral method. Currently `BHP()` (the implemented T=0 method);
-once available, the sum-rule-conserving `FDM()` becomes the default.
+The robust default spectral method, currently `BHP()`. The complete-basis [`CFS`](@ref)
+(T=0, sum rule exact by completeness) is also available for comparison; the finite-T
+`FDM()` becomes the default once it lands.
 """
 default_spectral_method() = BHP()
 

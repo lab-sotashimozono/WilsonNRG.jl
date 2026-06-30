@@ -49,6 +49,7 @@ include("engine_u1u1.jl")
 include("thermodynamics.jl")
 include("kondo.jl")
 include("spectral.jl")
+include("cfs.jl")
 include("self_energy.jl")
 
 end # module WilsonNRG
