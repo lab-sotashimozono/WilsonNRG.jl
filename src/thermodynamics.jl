@@ -175,3 +175,61 @@ function magnetization(
     end
     return (; T, M_imp)
 end
+
+# median without a Statistics dependency
+function _median(v)
+    return (
+        s=sort(v); n=length(s); iseven(n) ? (s[n ÷ 2] + s[n ÷ 2 + 1]) / 2 : s[n ÷ 2 + 1]
+    )
+end
+
+"""
+    wilson_ratio(model::AndersonModel, alg; betabar=1.0, s_lo=0.03, s_hi=0.25) -> (; T, R, R_fp)
+
+Wilson ratio `R_W(T)` and its strong-coupling fixed-point value `R_fp`, reproducing the Kondo-limit
+`R = 2` (Andrei, PRL 45, 379 (1980); Krishna-murthy–Wilkins–Wilson, PRB 21, 1044 (1980); Hewson,
+*The Kondo Problem*, 1993).
+
+`R_W = (χ_imp/γ_imp) / (χ_imp/γ_imp)|_free` — the impurity spin susceptibility over the specific-heat
+coefficient, normalised to `1` for the non-interacting (free resonant level, `U=0`) Fermi liquid.
+For a Fermi liquid the impurity entropy is linear, `S_imp ≈ γ_imp·T`, so `γ_imp = S_imp/T` (the
+RELIABLE entropy slope — the specific heat via energy fluctuations is swamped by the even/odd parity
+artefact of the two-run subtraction). With `χ_imp = Tχ_imp/T`,
+
+    R_W(T) = (Tχ_imp / S_imp)(model) / (Tχ_imp / S_imp)(free),
+
+the `T` cancels, and the deep-low-`T` two-run breakdown (`S_imp → const`) is a common discretisation
+artefact that CANCELS in the ratio (impurity and free runs share the chain). `R_fp` is the median
+over the screened Fermi-liquid **plateau** `s_lo < S_imp < s_hi` — below the crossover (`S_imp <
+s_hi`) and above the noise floor of the two-run subtraction (`S_imp > s_lo`); the deep tail where
+`S_imp` collapses to a small constant is excluded (it scatters wildly). `U1U1`.
+
+Checks: `R_W(U=0) = 1`; `R_fp → 2` in the Kondo limit (large `U/Γ`), reached and roughly universal
+for `U/Γ ≳ 6`; the crossover `1 → 2` as `U/Γ` grows. The exact continuum `R = 2` is approached as
+`Λ → 1` / with z-averaging; at `Λ = 2.5` the fixed-point value sits at `≈ 2.0–2.1`.
+"""
+function wilson_ratio(
+    model::AndersonModel,
+    alg::NRGAlgorithm;
+    betabar::Real=1.0,
+    s_lo::Real=0.03,
+    s_hi::Real=0.25,
+)
+    alg.symmetry isa U1U1 ||
+        throw(EngineUnimplemented("wilson_ratio needs U1U1 (got $(typeof(alg.symmetry)))"))
+    free = AndersonModel(; U=0.0, εd=0.0, Γ=model.Γ, D=model.D)   # non-interacting reference (R_W ≡ 1)
+    tm = thermodynamics(model, alg; betabar)
+    tf = thermodynamics(free, alg; betabar)
+    R = (tm.Tχ_imp ./ tm.S_imp) ./ (tf.Tχ_imp ./ tf.S_imp)
+    # Fermi-liquid plateau: model entropy in the window AND a PHYSICAL ratio 0.5 < R < 4 — the
+    # Wilson ratio is O(1) (free 1 → Kondo 2), so this rejects shells where the free-reference
+    # denominator crosses the two-run noise floor (near-zero S_free ⇒ |R| huge/negative), which
+    # would otherwise silently poison the median (independent of s_hi).
+    fl = [k for k in eachindex(tm.T) if s_lo < tm.S_imp[k] < s_hi && 0.5 < R[k] < 4.0]
+    if isempty(fl)
+        @warn "wilson_ratio: no Fermi-liquid plateau found (chain too short, or s_lo/s_hi off?)" s_lo s_hi nsites =
+            alg.nsites
+        return (; T=tm.T, R, R_fp=NaN)
+    end
+    return (; T=tm.T, R, R_fp=_median(R[fl]))
+end
