@@ -176,7 +176,7 @@ getting `A(ω)`/`Σ(ω)` accurately is hard — they are meant to be **compared*
 """
 abstract type AbstractSpectralMethod end
 
-"`BHP` — Bulla–Hewson–Pruschke T=0 spectral patching (PRB 57, 10287 (1998)). **Implemented.**"
+"`BHP` — Bulla–Hewson–Pruschke T=0 spectral patching (self-energy trick: J. Phys.: Condens. Matter 10, 8365 (1998); broadening/patching per Bulla–Costi–Pruschke RMP 80, 395 (2008), §III.B). **Implemented.**"
 struct BHP <: AbstractSpectralMethod end
 "`DMNRG` — density-matrix NRG (Hofstetter, PRL 85, 1508 (2000)). **Planned** (comparison target)."
 struct DMNRG <: AbstractSpectralMethod end
@@ -197,7 +197,7 @@ abstract type AbstractSelfEnergyMethod end
     SelfEnergyTrick() <: AbstractSelfEnergyMethod
 
 `Σ_σ = U · F_σ / G_σ` with `F_σ = ⟨⟨d_σ n_{-σ}; d†_σ⟩⟩` (Bulla–Hewson–Pruschke,
-PRB 57, 10287 (1998)). **Robust** — `Σ ∝ U` (exact `0` at `U=0`) and `F/G` shares
+J. Phys.: Condens. Matter 10, 8365 (1998)). **Robust** — `Σ ∝ U` (exact `0` at `U=0`) and `F/G` shares
 poles/broadening so errors largely cancel. The default ([`default_self_energy_method`](@ref)).
 """
 struct SelfEnergyTrick <: AbstractSelfEnergyMethod end
