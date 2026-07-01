@@ -1,6 +1,6 @@
 # ===========================================================================
-#  Dynamics from the impurity Green's function G(ω) (Bulla–Hewson–Pruschke,
-#  PRB 57, 10287 (1998); review: Bulla–Costi–Pruschke, RMP 80, 395 (2008), §III.B).
+#  Dynamics from the impurity Green's function G(ω) (self-energy trick: Bulla–Hewson–Pruschke,
+#  J. Phys.: Condens. Matter 10, 8365 (1998); review: Bulla–Costi–Pruschke, RMP 80, 395 (2008), §III.B).
 #
 #  Everything dynamical is derived from the complex retarded G(ω):
 #      A(ω) = -Im G(ω)/π            ([`spectral`](@ref))
