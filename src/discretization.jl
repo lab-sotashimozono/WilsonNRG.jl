@@ -57,8 +57,9 @@ logarithmic discretization at fixed `Λ` (the z-averaging schemes refine the dis
 `Tₙ = ωₙ / β̄`, `β̄ ~ 1`). Absolute spectral-function assembly for the z-shifted chains
 (which would need the z-dependent scale) is not claimed here — see [`band_dos`](@ref).
 """
-shell_scale(disc::AbstractDiscretization, n::Integer) =
-    (1 + disc.Λ^(-1)) / 2 * disc.Λ^(-(n - 1) / 2)
+function shell_scale(disc::AbstractDiscretization, n::Integer)
+    return (1 + disc.Λ^(-1)) / 2 * disc.Λ^(-(n - 1) / 2)
+end
 
 """
     hybridization(model::AndersonModel, ω) -> Float64

@@ -70,7 +70,9 @@ end
 function _fdm_reduced_dms(shells::Vector{_CFSShell}, logw, logZ)
     N = length(shells)
     ρ = Vector{Dict{NTuple{2,Int},Vector{Float64}}}(undef, N)
-    ρ[N] = Dict(qn => [isfinite(x) ? exp(x - logZ) : 0.0 for x in lw] for (qn, lw) in logw[N])
+    ρ[N] = Dict(
+        qn => [isfinite(x) ? exp(x - logZ) : 0.0 for x in lw] for (qn, lw) in logw[N]
+    )
     for n in (N - 1):-1:1
         sh = shells[n]
         child = shells[n + 1]
@@ -161,11 +163,17 @@ the quasi-elastic weight is never broadened below the grid spacing and silently 
 Needs `U1U1`. `A(ω) = -Im G/π` is [`spectral`](@ref).
 """
 function green_function(
-    ::FDM, model::AndersonModel, alg::NRGAlgorithm;
-    T::Real=0.0, b::Real=0.6, ω=nothing, ω0=nothing,
+    ::FDM,
+    model::AndersonModel,
+    alg::NRGAlgorithm;
+    T::Real=0.0,
+    b::Real=0.6,
+    ω=nothing,
+    ω0=nothing,
 )
-    alg.symmetry isa U1U1 ||
-        throw(EngineUnimplemented("FDM green_function needs U1U1 (got $(typeof(alg.symmetry)))"))
+    alg.symmetry isa U1U1 || throw(
+        EngineUnimplemented("FDM green_function needs U1U1 (got $(typeof(alg.symmetry)))"),
+    )
     T ≥ 0 || throw(ArgumentError("FDM: temperature T must be ≥ 0 (got $T)"))
     T == 0 && return green_function(CFS(), model, alg; b, ω)         # T=0 ≡ CFS (exact GS projector)
     ωs = ω === nothing ? _default_omega(model, alg) : collect(float.(ω))

@@ -37,7 +37,9 @@ end
     D = 1.0
     Λ = 2.5
     nsites = 5
-    alg = NRGAlgorithm(; discretization=WilsonLog(Λ), symmetry=U1U1(), truncation=KeepN(10^9), nsites)
+    alg = NRGAlgorithm(;
+        discretization=WilsonLog(Λ), symmetry=U1U1(), truncation=KeepN(10^9), nsites
+    )
     chain = wilson_chain(WilsonLog(Λ), AndersonModel(; U=0.0, εd=0.0, Γ, D), nsites)
     V0 = bath_coupling(AndersonModel(; U=0.0, εd=0.0, Γ, D))
     tgrid = [0.0, 1.0, 3.0, 7.0, 15.0, 30.0]
@@ -46,7 +48,10 @@ end
     @testset "U=0 single-particle reproduction" begin
         for (εi, εf) in ((-0.3, 0.2), (0.4, -0.1), (0.25, -0.25))
             got = quench_dynamics(
-                AndersonModel(; U=0.0, εd=εi, Γ, D), AndersonModel(; U=0.0, εd=εf, Γ, D), alg; times=tgrid
+                AndersonModel(; U=0.0, εd=εi, Γ, D),
+                AndersonModel(; U=0.0, εd=εf, Γ, D),
+                alg;
+                times=tgrid,
             )
             ref = _sp_quench(εi, εf, chain, nsites, V0, Λ)
             @test maximum(abs, got.nd .- ref.(tgrid)) < 1.0e-9
@@ -81,11 +86,17 @@ end
     # ---- contracts: shared bath required; honest stub for unwired symmetry ----
     @testset "contracts" begin
         @test_throws ArgumentError quench_dynamics(
-            AndersonModel(; U=0.0, εd=-0.3, Γ=0.05, D), AndersonModel(; U=0.0, εd=0.2, Γ=0.1, D), alg; times=[0.0]
+            AndersonModel(; U=0.0, εd=-0.3, Γ=0.05, D),
+            AndersonModel(; U=0.0, εd=0.2, Γ=0.1, D),
+            alg;
+            times=[0.0],
         )
         alg_su2 = NRGAlgorithm(; discretization=WilsonLog(Λ), symmetry=U1SU2(), nsites)
         @test_throws EngineUnimplemented quench_dynamics(
-            AndersonModel(; U=0.0, εd=-0.3, Γ, D), AndersonModel(; U=0.0, εd=0.2, Γ, D), alg_su2; times=[0.0]
+            AndersonModel(; U=0.0, εd=-0.3, Γ, D),
+            AndersonModel(; U=0.0, εd=0.2, Γ, D),
+            alg_su2;
+            times=[0.0],
         )
     end
 end

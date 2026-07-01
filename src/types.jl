@@ -47,8 +47,8 @@ struct AndersonModel <: AbstractImpurityModel
     Γ::Float64
     D::Float64
 end
-function AndersonModel(; U::Real, εd::Real=-U / 2, Γ::Real, D::Real=1.0)
-    AndersonModel(Float64(U), Float64(εd), Float64(Γ), Float64(D))
+function AndersonModel(; U::Real, εd::Real=(-U / 2), Γ::Real, D::Real=1.0)
+    return AndersonModel(Float64(U), Float64(εd), Float64(Γ), Float64(D))
 end
 
 """
@@ -178,7 +178,7 @@ abstract type AbstractSpectralMethod end
 
 "`BHP` — Bulla–Hewson–Pruschke T=0 spectral patching (self-energy trick: J. Phys.: Condens. Matter 10, 8365 (1998); broadening/patching per Bulla–Costi–Pruschke RMP 80, 395 (2008), §III.B). **Implemented.**"
 struct BHP <: AbstractSpectralMethod end
-"`DMNRG` — density-matrix NRG (Hofstetter, PRL 85, 1508 (2000)). **Planned** (comparison target)."
+"`DMNRG` — density-matrix NRG spectral function via the off-diagonal reduced DM (Hofstetter, PRL 85, 1508 (2000)). **Implemented.**"
 struct DMNRG <: AbstractSpectralMethod end
 "`CFS` — complete-Fock-space / TDNRG (Anders & Schiller, PRL 95, 196801 (2005)). **Planned**."
 struct CFS <: AbstractSpectralMethod end

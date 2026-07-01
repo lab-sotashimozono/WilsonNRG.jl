@@ -140,12 +140,12 @@ function green_function(
     return (; ω=ωs, G=_correlator(poles, ωs, b, 2))
 end
 function green_function(model::AbstractImpurityModel, alg::NRGAlgorithm; kw...)
-    green_function(default_spectral_method(), model, alg; kw...)
+    return green_function(default_spectral_method(), model, alg; kw...)
 end
 function green_function(
     method::AbstractSpectralMethod, ::AbstractImpurityModel, ::NRGAlgorithm; kw...
 )
-    throw(
+    return throw(
         EngineUnimplemented(
             "green_function via $(typeof(method)) not implemented; BHP is available."
         ),
@@ -166,5 +166,5 @@ function spectral(
     return (; ω=gf.ω, A=(-1 / π) .* imag.(gf.G))
 end
 function spectral(model::AbstractImpurityModel, alg::NRGAlgorithm; kw...)
-    spectral(default_spectral_method(), model, alg; kw...)
+    return spectral(default_spectral_method(), model, alg; kw...)
 end

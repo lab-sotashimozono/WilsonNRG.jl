@@ -189,8 +189,9 @@ Needs `U1U1`. `A(ω) = -Im G/π` is [`spectral`](@ref).
 function green_function(
     ::CFS, model::AndersonModel, alg::NRGAlgorithm; b::Real=0.6, ω=nothing
 )
-    alg.symmetry isa U1U1 ||
-        throw(EngineUnimplemented("CFS green_function needs U1U1 (got $(typeof(alg.symmetry)))"))
+    alg.symmetry isa U1U1 || throw(
+        EngineUnimplemented("CFS green_function needs U1U1 (got $(typeof(alg.symmetry)))"),
+    )
     ωs = ω === nothing ? _default_omega(model, alg) : collect(float.(ω))
     shells = _cfs_collect(model, alg)
     ρ = _cfs_reduced_dms(shells)

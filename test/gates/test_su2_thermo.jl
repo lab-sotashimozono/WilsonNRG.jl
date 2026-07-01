@@ -9,8 +9,12 @@ using WilsonNRG, Test
 @testset "method-recovery gate · SU(2) thermodynamics (known results through multiplets)" begin
     disc = WilsonLog(2.0)
     free = AndersonModel(; U=0.5, εd=-0.25, Γ=0.0008, D=1.0)        # V₀ tiny ⇒ decoupled free spin
-    su2 = NRGAlgorithm(; discretization=disc, symmetry=U1SU2(), truncation=EnergyCut(6.5), nsites=16)
-    u1 = NRGAlgorithm(; discretization=disc, symmetry=U1U1(), truncation=EnergyCut(6.5), nsites=16)
+    su2 = NRGAlgorithm(;
+        discretization=disc, symmetry=U1SU2(), truncation=EnergyCut(6.5), nsites=16
+    )
+    u1 = NRGAlgorithm(;
+        discretization=disc, symmetry=U1U1(), truncation=EnergyCut(6.5), nsites=16
+    )
 
     # ---- (1) decoupled ⇒ exact free spin: Tχ_imp=1/4, S_imp=ln2, high-T S→ln4 (through U1SU2) ----
     th = thermodynamics(free, su2)
@@ -26,8 +30,12 @@ using WilsonNRG, Test
 
     # ---- (3) coupled ⇒ Kondo screening: Tχ_imp → 0, S_imp → 0 (through U1SU2) ----
     kondo = AndersonModel(; U=0.15, εd=-0.075, Γ=0.03, D=1.0)
-    thk = thermodynamics(kondo,
-        NRGAlgorithm(; discretization=disc, symmetry=U1SU2(), truncation=EnergyCut(6.0), nsites=18))
+    thk = thermodynamics(
+        kondo,
+        NRGAlgorithm(;
+            discretization=disc, symmetry=U1SU2(), truncation=EnergyCut(6.0), nsites=18
+        ),
+    )
     @test thk.Tχ_imp[end] < 0.05                            # screened singlet
     @test thk.S_imp[end] < 0.20                             # entropy quenched
     @test maximum(thk.Tχ_imp) > 2 * thk.Tχ_imp[end]         # local moment formed, then screened
@@ -40,5 +48,7 @@ using WilsonNRG, Test
     @test maximum(abs, mg.M_imp .- mgu.M_imp) < 1.0e-9      # agrees with the abelian path
 
     # ---- (5) genuinely unwired symmetries still refuse (not silently summed) ----
-    @test_throws WilsonNRG.EngineUnimplemented WilsonNRG._shell_thermo([(0.0, 1)], 1.0, SU2SU2())
+    @test_throws WilsonNRG.EngineUnimplemented WilsonNRG._shell_thermo(
+        [(0.0, 1)], 1.0, SU2SU2()
+    )
 end

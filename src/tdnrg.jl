@@ -54,8 +54,9 @@ to finite-chain recurrences. Assumes a non-degenerate `initial` ground state.
 function quench_dynamics(
     initial::AndersonModel, final::AndersonModel, alg::NRGAlgorithm; times
 )
-    alg.symmetry isa U1U1 ||
-        throw(EngineUnimplemented("quench_dynamics needs U1U1 (got $(typeof(alg.symmetry)))"))
+    alg.symmetry isa U1U1 || throw(
+        EngineUnimplemented("quench_dynamics needs U1U1 (got $(typeof(alg.symmetry)))")
+    )
     (initial.Γ == final.Γ && initial.D == final.D) || throw(
         ArgumentError(
             "quench_dynamics: initial and final must share the bath (Γ, D) — the Wilson chain is common",
@@ -67,7 +68,9 @@ function quench_dynamics(
     stf = impurity_init(final, U1U1(), chain)
     sti = impurity_init(initial, U1U1(), chain)
     S = Dict(qn => Matrix{Float64}(I, length(ev), length(ev)) for (qn, ev) in stf.E)
-    nd = Dict((1, 1) => fill(1.0, 1, 1), (1, -1) => fill(1.0, 1, 1), (2, 0) => fill(2.0, 1, 1))
+    nd = Dict(
+        (1, 1) => fill(1.0, 1, 1), (1, -1) => fill(1.0, 1, 1), (2, 0) => fill(2.0, 1, 1)
+    )
     keepall = KeepN(typemax(Int))
     for n in bath_sites_in_init(final):(alg.nsites - 1)
         coupling = n == 0 ? bath_coupling(final) : chain.hopping[n]

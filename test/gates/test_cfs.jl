@@ -42,7 +42,7 @@ using WilsonNRG, Test
     # p-h also guards the degenerate-GS seed (the odd-parity Kondo doublet must be split, not picked).
     @testset "CFS at U>0 (symmetric point)" begin
         U = 0.5
-        mU = AndersonModel(; U, εd=-U / 2, Γ, D=1.0)
+        mU = AndersonModel(; U, εd=(-U / 2), Γ, D=1.0)
         rU = spectral(CFS(), mU, alg)
         ωU, AU = rU.ω, rU.A
         @test isapprox(trapz(ωU, AU), 1.0; atol=0.05)           # sum rule survives interactions (≈1.003)

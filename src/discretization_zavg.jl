@@ -40,8 +40,13 @@ The z-averaged local density of states `A_{f0}(ω)` of the discretized **flat** 
 reproduces the band, `A_{f0}(ω) = ρ(ω) = 1/(2D)`. `scheme ∈ (:conventional, :campo_oliveira,
 :zitko)` selects the representative-energy recipe; `:zitko` (Eq. 35/36) is exact for the flat band.
 """
-function band_dos(disc::AbstractDiscretization, model::AndersonModel; scheme::Symbol=:zitko,
-    nint::Integer=12, nz::Integer=64)
+function band_dos(
+    disc::AbstractDiscretization,
+    model::AndersonModel;
+    scheme::Symbol=:zitko,
+    nint::Integer=12,
+    nz::Integer=64,
+)
     Λ, D = disc.Λ, model.D
     Efn = _ZAVG_SCHEMES[scheme]
     ωs = Float64[]
@@ -51,8 +56,9 @@ function band_dos(disc::AbstractDiscretization, model::AndersonModel; scheme::Sy
         z = k / nz                                   # z ∈ (0,1]
         ω = Efn(Λ, j, z)
         (0 < ω ≤ 1) || continue
-        dEdz = (Efn(Λ, j, min(z + h, 1.0)) - Efn(Λ, j, max(z - h, 1.0e-9))) /
-               (min(z + h, 1.0) - max(z - h, 1.0e-9))
+        dEdz =
+            (Efn(Λ, j, min(z + h, 1.0)) - Efn(Λ, j, max(z - h, 1.0e-9))) /
+            (min(z + h, 1.0) - max(z - h, 1.0e-9))
         dEdz == 0 && continue
         weight = (_zavg_hi(Λ, j, z) - _zavg_lo(Λ, j, z)) / 2      # dimensionless ∫ρdε (ρ̃=1/2)
         push!(ωs, ω * D)
@@ -107,12 +113,14 @@ z-shifted Wilson chain for the flat band, via Lanczos of the discretized-band st
 carried by `disc`). `CampoOliveira` uses the log-mean representative energy (Eq. 32);
 `ZitkoPruschke` the artefact-free choice (Eq. 35/36). Both feed [`nrg_solve`](@ref) directly.
 """
-wilson_chain(disc::CampoOliveira, model::AbstractImpurityModel, nsites::Integer) =
-    _zshift_chain(disc, _rep_campo_oliveira, model, nsites)
-wilson_chain(disc::ZitkoPruschke, model::AbstractImpurityModel, nsites::Integer) =
-    _zshift_chain(disc, _rep_zitko, model, nsites)
+function wilson_chain(disc::CampoOliveira, model::AbstractImpurityModel, nsites::Integer)
+    return _zshift_chain(disc, _rep_campo_oliveira, model, nsites)
+end
+function wilson_chain(disc::ZitkoPruschke, model::AbstractImpurityModel, nsites::Integer)
+    return _zshift_chain(disc, _rep_zitko, model, nsites)
+end
 
 # clean failure for a discretization without a wilson_chain (not a bare MethodError)
 function wilson_chain(disc::AbstractDiscretization, ::AbstractImpurityModel, ::Integer)
-    throw(EngineUnimplemented("wilson_chain not implemented for $(typeof(disc))"))
+    return throw(EngineUnimplemented("wilson_chain not implemented for $(typeof(disc))"))
 end

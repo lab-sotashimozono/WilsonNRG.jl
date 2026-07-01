@@ -66,7 +66,7 @@ const _STAGE1 =
     "Available now: wilson_chain(...) and the U=0 bootstrap " *
     "(resonant_level_spectral / friedel_pin / spectral_sum_rule)."
 function impurity_init(m::AbstractImpurityModel, s::AbstractSymmetry, ::WilsonChain)
-    throw(
+    return throw(
         EngineUnimplemented("impurity_init for $(typeof(m)) under $(typeof(s)) — $_STAGE1")
     )
 end

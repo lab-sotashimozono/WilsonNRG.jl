@@ -33,7 +33,7 @@ using WilsonNRG: clebsch_gordan, wigner3j, wigner6j
     @test wigner3j(1 // 2, 1 // 2, 1, 1 // 2, -1 // 2, 0) ≈ 1 / sqrt(6)
     @test wigner3j(1, 1, 1, 0, 0, 0) == 0.0                                      # parity zero (j-sum odd)
     @test wigner3j(1 // 2, 1 // 2, 1, 1 // 2, -1 // 2, 0) ≈
-          wigner3j(1 // 2, 1, 1 // 2, -1 // 2, 0, 1 // 2)                        # cyclic invariance
+        wigner3j(1 // 2, 1, 1 // 2, -1 // 2, 0, 1 // 2)                        # cyclic invariance
 
     # triangle violations vanish
     @test clebsch_gordan(1 // 2, 1 // 2, 1 // 2, 1 // 2, 0, 0) == 0.0           # |1/2-1/2|..=0 only

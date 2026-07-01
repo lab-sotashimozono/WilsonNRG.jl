@@ -39,7 +39,10 @@ end
         for εd in (0.0, 0.3, -0.2, 0.5)
             model = AndersonModel(; U=0.0, εd, Γ=0.05, D=1.0)
             alg = NRGAlgorithm(;
-                discretization=WilsonLog(2.5), symmetry=U1U1(), truncation=KeepN(10^9), nsites=5
+                discretization=WilsonLog(2.5),
+                symmetry=U1U1(),
+                truncation=KeepN(10^9),
+                nsites=5,
             )
             occ = occupation(model, alg)
             nσ = _sp_occupation(model, wilson_chain(WilsonLog(2.5), model, 5), 5)
@@ -58,7 +61,10 @@ end
             model = AndersonModel(; U, εd, Γ=0.05, D=1.0)
             errs = map((400, 900)) do keep
                 alg = NRGAlgorithm(;
-                    discretization=WilsonLog(2.5), symmetry=U1U1(), truncation=KeepN(keep), nsites=28
+                    discretization=WilsonLog(2.5),
+                    symmetry=U1U1(),
+                    truncation=KeepN(keep),
+                    nsites=28,
                 )
                 abs(occupation(model, alg).total - 1)
             end
@@ -75,7 +81,10 @@ end
         nd(εd) = occupation(
             AndersonModel(; U=0.0, εd, Γ, D=1.0),
             NRGAlgorithm(;
-                discretization=WilsonLog(2.0), symmetry=U1U1(), truncation=KeepN(400), nsites=40
+                discretization=WilsonLog(2.0),
+                symmetry=U1U1(),
+                truncation=KeepN(400),
+                nsites=40,
             ),
         ).up
         for εd in (-0.15, -0.05, 0.0, 0.05, 0.15)

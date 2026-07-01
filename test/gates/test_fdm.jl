@@ -28,7 +28,8 @@ using WilsonNRG, Test
     @test abs(∫A - 1) < abs(trapz(ω, A_bhp) - 1)                # tighter than BHP patching
 
     # ---- (2) T=0 reduces EXACTLY to CFS (FDM delegates to the GS projector) ----
-    @test maximum(abs, spectral(FDM(), m, alg; T=0.0).A .- spectral(CFS(), m, alg).A) < 1.0e-12
+    @test maximum(abs, spectral(FDM(), m, alg; T=0.0).A .- spectral(CFS(), m, alg).A) <
+        1.0e-12
 
     # ---- (3) ω≈0 finite: two-regime broadening tames the 1/|ω| divergence ----
     @test isfinite(A[argmin(abs.(ω))]) && maximum(A) < 10.0     # no near-zero spike
@@ -46,12 +47,18 @@ using WilsonNRG, Test
     seC = self_energy(CFS(), m, alg; via=Dyson(), ω=ω)
     @test all(isfinite, seC.Σ) && maximum(abs, seC.Σ) < 1.0       # (≈0.6)
     # the trick stays BHP-only — encoded in dispatch, throws cleanly (not a MethodError)
-    @test_throws WilsonNRG.EngineUnimplemented self_energy(FDM(), m, alg; via=SelfEnergyTrick(), T)
+    @test_throws WilsonNRG.EngineUnimplemented self_energy(
+        FDM(), m, alg; via=SelfEnergyTrick(), T
+    )
 
     # ---- (6) FDM thermal density matrix is normalized: Σ terminal weights = Tr ρ = 1
     # (completeness, the basis of the sum rule — asserted directly, not just end-to-end) ----
     shells = WilsonNRG._cfs_collect(m, alg)
-    logw, logZ = WilsonNRG._fdm_log_weights(shells, WilsonNRG._fdm_abs_energies(shells), 1 / T)
-    trρ = sum(sum(isfinite(x) ? exp(x - logZ) : 0.0 for x in lw) for d in logw for lw in values(d))
+    logw, logZ = WilsonNRG._fdm_log_weights(
+        shells, WilsonNRG._fdm_abs_energies(shells), 1 / T
+    )
+    trρ = sum(
+        sum(isfinite(x) ? exp(x - logZ) : 0.0 for x in lw) for d in logw for lw in values(d)
+    )
     @test isapprox(trρ, 1.0; atol=1.0e-10)
 end

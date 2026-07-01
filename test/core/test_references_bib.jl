@@ -16,23 +16,38 @@
 
 using WilsonNRG, Test
 
-references_bib_path() =
-    get(ENV, "QATLAS_REFERENCES_BIB", joinpath(pkgdir(WilsonNRG), "docs", "reference.bib"))
+function references_bib_path()
+    return get(
+        ENV, "QATLAS_REFERENCES_BIB", joinpath(pkgdir(WilsonNRG), "docs", "reference.bib")
+    )
+end
 
 # (key, volume, first-page, doi) for each @entry in the .bib (volume precedes pages within an entry)
 function bib_entries(path::AbstractString)
-    entries = NamedTuple{(:key, :vol, :page, :doi),Tuple{String,Union{Int,Nothing},Union{Int,Nothing},String}}[]
-    key = ""; vol = nothing; page = nothing; doi = ""
+    entries = NamedTuple{
+        (:key, :vol, :page, :doi),Tuple{String,Union{Int,Nothing},Union{Int,Nothing},String}
+    }[]
+    key = "";
+    vol = nothing;
+    page = nothing;
+    doi = ""
     flush!() = isempty(key) || push!(entries, (; key, vol, page, doi))
     for line in eachline(path)
         m = match(r"^@\w+\{\s*([^,\s]+)\s*,", line)
         if m !== nothing
-            flush!(); key = String(m.captures[1]); vol = nothing; page = nothing; doi = ""
+            flush!();
+            key = String(m.captures[1]);
+            vol = nothing;
+            page = nothing;
+            doi = ""
             continue
         end
-        v = match(r"volume\s*=\s*\{(\d+)\}", line); v !== nothing && (vol = parse(Int, v.captures[1]))
-        p = match(r"pages\s*=\s*\{0*(\d+)", line); p !== nothing && (page = parse(Int, p.captures[1]))
-        d = match(r"doi\s*=\s*\{([^}]+)\}", line); d !== nothing && (doi = String(d.captures[1]))
+        v = match(r"volume\s*=\s*\{(\d+)\}", line);
+        v !== nothing && (vol = parse(Int, v.captures[1]))
+        p = match(r"pages\s*=\s*\{0*(\d+)", line);
+        p !== nothing && (page = parse(Int, p.captures[1]))
+        d = match(r"doi\s*=\s*\{([^}]+)\}", line);
+        d !== nothing && (doi = String(d.captures[1]))
     end
     flush!()
     return entries

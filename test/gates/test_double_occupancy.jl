@@ -31,7 +31,10 @@ using WilsonNRG, Test
     # ---- (2) U>0 ⇒ Coulomb suppression below the uncorrelated value, monotone in U ----
     @testset "Coulomb suppression at the symmetric point" begin
         # symmetric point: ⟨n↑⟩=⟨n↓⟩=1/2 ⇒ uncorrelated value 1/4; U suppresses below it, → 0
-        d = [double_occupancy(AndersonModel(; U, εd=-U / 2, Γ, D), ka(6)) for U in (0.0, 0.4, 1.0, 2.0)]
+        d = [
+            double_occupancy(AndersonModel(; U, εd=(-U / 2), Γ, D), ka(6)) for
+            U in (0.0, 0.4, 1.0, 2.0)
+        ]
         @test d[1] ≈ 0.25 atol = 1.0e-6                     # U=0 symmetric ⇒ exactly 1/4
         @test issorted(d; rev=true)                         # monotonically suppressed by U
         @test all(0.0 .≤ d .≤ 0.25 + 1.0e-9)                # never exceeds the uncorrelated value
@@ -44,7 +47,12 @@ using WilsonNRG, Test
         exact = double_occupancy(model, ka(7))
         trunc = double_occupancy(
             model,
-            NRGAlgorithm(; discretization=WilsonLog(Λ), symmetry=U1U1(), truncation=KeepN(400), nsites=7),
+            NRGAlgorithm(;
+                discretization=WilsonLog(Λ),
+                symmetry=U1U1(),
+                truncation=KeepN(400),
+                nsites=7,
+            ),
         )
         @test trunc ≈ exact atol = 1.0e-5           # truncation-robust (→ exact as KeepN grows)
     end
