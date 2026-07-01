@@ -12,6 +12,8 @@
 #       E₁(z) = (1 − Λ^{−z})/ln Λ + 1 − z.
 # ===========================================================================
 
+using LinearAlgebra: norm, dot
+
 # z-shifted intervals of the (positive) flat band [0,1] in units of D, for twist z ∈ (0,1]:
 #   I₁ = [Λ^{-z}, 1];  Iⱼ = [Λ^{-(j-1+z)}, Λ^{-(j-2+z)}]  (j ≥ 2)
 _zavg_lo(Λ, j, z) = j == 1 ? Λ^(-z) : Λ^(-(j - 1 + z))
@@ -58,4 +60,59 @@ function band_dos(disc::AbstractDiscretization, model::AndersonModel; scheme::Sy
     end
     p = sortperm(ωs)
     return (; ω=ωs[p], A=As[p])
+end
+
+# z-shifted Wilson chain via Lanczos: the discretized-band star (both ± branches, representative
+# energy `Efn`) is tridiagonalized from the f₀ coupling vector. The stored hopping is dimensionless,
+# ξₙ = tₙ·Λ^{n/2} (the driver's √Λ recursion restores the physical tₙ ∝ Λ^{-n/2}); onsite = 0 by
+# particle–hole symmetry. Same convention as the WilsonLog closed form, so it runs in `nrg_solve`.
+function _zshift_chain(disc, Efn, model::AbstractImpurityModel, nsites::Integer)
+    Λ, z, Γ, D = disc.Λ, disc.z, model.Γ, model.D
+    εs = Float64[]
+    γs = Float64[]
+    for j in 1:(nsites + 40)                              # enough intervals for a stable chain
+        a, c = D * _zavg_lo(Λ, j, z), D * _zavg_hi(Λ, j, z)
+        c - a > 1.0e-14 * D || continue
+        Erep = D * Efn(Λ, j, z)
+        γ2 = (Γ / π) * (c - a)                            # ∫_{Iⱼ} Γ/π dε
+        for s in (1.0, -1.0)                              # particle / hole branches
+            push!(εs, s * Erep)
+            push!(γs, sqrt(γ2))
+        end
+    end
+    onsite = zeros(nsites)
+    hopping = zeros(nsites)
+    vprev = zeros(length(εs))
+    v = γs ./ norm(γs)                                    # f₀ ∝ Σ γⱼ aⱼ
+    βprev = 0.0
+    for n in 1:nsites
+        Hv = εs .* v
+        α = dot(v, Hv)                                    # ≈ 0 (±-symmetric band)
+        w = Hv .- α .* v .- βprev .* vprev
+        β = norm(w)
+        n < nsites && (hopping[n] = β * Λ^(n / 2))        # ξₙ = tₙ·Λ^{n/2}
+        β < 1.0e-13 && break
+        vprev = v
+        v = w ./ β
+        βprev = β
+    end
+    return WilsonChain(onsite, hopping, disc)
+end
+
+"""
+    wilson_chain(disc::CampoOliveira, model, nsites)
+    wilson_chain(disc::ZitkoPruschke, model, nsites)
+
+z-shifted Wilson chain for the flat band, via Lanczos of the discretized-band star (twist `z`
+carried by `disc`). `CampoOliveira` uses the log-mean representative energy (Eq. 32);
+`ZitkoPruschke` the artefact-free choice (Eq. 35/36). Both feed [`nrg_solve`](@ref) directly.
+"""
+wilson_chain(disc::CampoOliveira, model::AbstractImpurityModel, nsites::Integer) =
+    _zshift_chain(disc, _rep_campo_oliveira, model, nsites)
+wilson_chain(disc::ZitkoPruschke, model::AbstractImpurityModel, nsites::Integer) =
+    _zshift_chain(disc, _rep_zitko, model, nsites)
+
+# clean failure for a discretization without a wilson_chain (not a bare MethodError)
+function wilson_chain(disc::AbstractDiscretization, ::AbstractImpurityModel, ::Integer)
+    throw(EngineUnimplemented("wilson_chain not implemented for $(typeof(disc))"))
 end
