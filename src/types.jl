@@ -92,26 +92,35 @@ struct WilsonLog <: AbstractDiscretization
 end
 
 """
-    CampoOliveira(Λ, z) <: AbstractDiscretization
+    CampoOliveira(Λ; z=1.0) <: AbstractDiscretization
 
-`z`-averaging discretization (Campo & Oliveira, PRB 72, 104432 (2005)) — shifts
-the logarithmic grid by `z ∈ (0,1]` to suppress discretization artifacts.
-**Planned** (Stage 5).
+`z`-averaging discretization (Campo & Oliveira, PRB 72, 104432 (2005)) — shifts the
+logarithmic grid by the twist `z ∈ (0,1]` and takes the log-mean representative energy
+(Žitko Eq. 32). `wilson_chain` builds the z-shifted chain via Lanczos, so it runs in
+[`nrg_solve`](@ref); note this recipe still leaves band-edge artefacts in `band_dos`
+(cured by [`ZitkoPruschke`](@ref)).
 """
 struct CampoOliveira <: AbstractDiscretization
     Λ::Float64
     z::Float64
 end
+CampoOliveira(Λ::Real; z::Real=1.0) = CampoOliveira(Float64(Λ), Float64(z))
 
 """
     ZitkoPruschke(Λ) <: AbstractDiscretization
 
-Adaptive discretization for arbitrary `Δ(ω)` (Žitko & Pruschke, PRB 79, 085106
-(2009)). **Planned** (Stage 5).
+Improved discretization (Žitko & Pruschke, PRB 79, 085106 (2009)): the representative
+energies are chosen so the z-averaged band is reproduced *exactly*, `A_{f0}(ω) = ρ(ω)`,
+removing the band-edge artefacts of the conventional/Campo–Oliveira schemes (their Eq. 35/36).
+The flat-band band-DOS reproduction is available via [`band_dos`](@ref); `wilson_chain`
+builds the z-shifted Wilson chain (twist `z`, default `1.0`) via Lanczos, so it runs in
+[`nrg_solve`](@ref). z-averaging = averaging observables over several `z ∈ (0,1]`.
 """
 struct ZitkoPruschke <: AbstractDiscretization
     Λ::Float64
+    z::Float64
 end
+ZitkoPruschke(Λ::Real; z::Real=1.0) = ZitkoPruschke(Float64(Λ), Float64(z))
 
 # ---------------------------------------------------------------------------
 # Axis 3 — symmetry  (conserved charges → multiplet / block structure)

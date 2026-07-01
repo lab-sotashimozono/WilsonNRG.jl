@@ -37,6 +37,7 @@ export KeepN, EnergyCut
 # --- core objects + driver ---
 export WilsonChain, NRGAlgorithm, NRGResult, EngineUnimplemented
 export wilson_chain, asymptotic_hopping, hybridization, bath_coupling, nrg_solve, spectral
+export band_dos
 export shell_scale, thermodynamics, magnetization
 export green_function, self_energy, hybridization_function, compare_self_energy
 export default_spectral_method, default_self_energy_method
@@ -45,6 +46,7 @@ export clebsch_gordan, wigner3j, wigner6j
 include("bootstrap.jl")
 include("types.jl")
 include("discretization.jl")
+include("discretization_zavg.jl")
 include("interface.jl")
 include("engine_u1u1.jl")
 include("thermodynamics.jl")

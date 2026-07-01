@@ -49,12 +49,16 @@ asymptotic_hopping(disc::WilsonLog) = (1 + disc.Λ^(-1)) / 2
 """
     shell_scale(disc::AbstractDiscretization, n) -> Float64
 
-Characteristic energy scale `ωₙ` of NRG shell `n` (last site `f_n`), in units of
-the band half-width `D`. For `WilsonLog`, `ωₙ = (1+Λ⁻¹)/2 · Λ^{-(n-1)/2}` (the
-standard NRG scale; Bulla, Costi & Pruschke, RMP 80, 395 (2008)). The temperature
-of shell `n` is `Tₙ = ωₙ / β̄` for a dimensionless `β̄ ~ 1`.
+Characteristic energy scale `ωₙ` of NRG shell `n` (last site `f_n`), in units of the band
+half-width `D`: the standard NRG ladder `ωₙ = (1+Λ⁻¹)/2 · Λ^{-(n-1)/2}` (Bulla, Costi &
+Pruschke, RMP 80, 395 (2008), Eq. 3.9). A function of `Λ` and `n` only — shared by every
+logarithmic discretization at fixed `Λ` (the z-averaging schemes refine the discretized
+*band*, not this shell energy ladder; the O(1) prefactor is absorbed into the convention
+`Tₙ = ωₙ / β̄`, `β̄ ~ 1`). Absolute spectral-function assembly for the z-shifted chains
+(which would need the z-dependent scale) is not claimed here — see [`band_dos`](@ref).
 """
-shell_scale(disc::WilsonLog, n::Integer) = (1 + disc.Λ^(-1)) / 2 * disc.Λ^(-(n - 1) / 2)
+shell_scale(disc::AbstractDiscretization, n::Integer) =
+    (1 + disc.Λ^(-1)) / 2 * disc.Λ^(-(n - 1) / 2)
 
 """
     hybridization(model::AndersonModel, ω) -> Float64
