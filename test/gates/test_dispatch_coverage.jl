@@ -47,6 +47,10 @@ end
         for via in (SelfEnergyTrick(), Dyson()), s in (U1U1(), U1SU2())
             @test _branch(() -> self_energy(BHP(), And, alg(WilsonLog(2.5), s); via)) != :gap
         end
+        qfin = AndersonModel(; U=0.3, εd=0.1, Γ, D)         # shares the bath with And
+        for s in (U1U1(), U1SU2(), SU2SU2())
+            @test _branch(() -> quench_dynamics(And, qfin, alg(WilsonLog(2.5), s); times=[0.0, 1.0])) != :gap
+        end
     end
 
     # ---- (b) POSITIVE coverage: the implemented branches actually RUN (not just non-throwing) ----
@@ -63,6 +67,7 @@ end
         end
         @test _branch(() -> thermodynamics(And, alg(WilsonLog(2.5), U1SU2(); tr=EnergyCut(7.0), n=10))) == :ok
         @test _branch(() -> self_energy(And, alg(WilsonLog(2.5), U1U1()))) == :ok
+        @test _branch(() -> quench_dynamics(And, AndersonModel(; U=0.3, εd=0.1, Γ, D), alg(WilsonLog(2.5), U1U1()); times=[0.0, 1.0])) == :ok
     end
 
     # ---- (b') SU2SU2 is uniformly honest (unimplemented everywhere it is reached, never a gap) ----
