@@ -307,6 +307,12 @@ function update_operators(diag::SU2SU2Diag, plan::Dict{K,Vector{Int}}, ::SU2SU2)
                     coef =
                         _su2su2_recouple(Ik, Sk, i, s, ii, ss, I, S, Ip, Sp, par) *
                         (-1.0)^Int(2Ik)
+                    # fail closed: a NaN means _su2su2_recouple hit a Wigner-Eckart inconsistency —
+                    # surface it rather than silently poisoning the Hamiltonian (NaN≠0 slips the guard).
+                    isnan(coef) && error(
+                        "SU2SU2 operator-update recoupling produced NaN (Wigner-Eckart violation) " *
+                        "at (I,S)=($I,$S)→($Ip,$Sp), spectator (Ik,Sk)=($Ik,$Sk), site ($i,$s)→($ii,$ss)",
+                    )
                     coef == 0.0 && continue
                     rt = tgtseg[(Ik, Sk, ii, ss)]
                     for (a, b) in zip(rt, r)
