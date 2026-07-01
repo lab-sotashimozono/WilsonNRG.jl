@@ -89,8 +89,9 @@ so `⟨n_{d↑}n_{d↓}⟩ = ⟨n_{d↑}⟩⟨n_{d↓}⟩`; the Coulomb `U` supp
 charge fluctuation is `⟨n_d²⟩ - ⟨n_d⟩² = ⟨n_d⟩ + 2⟨n_{d↑}n_{d↓}⟩ - ⟨n_d⟩²` with [`occupation`](@ref).
 """
 function double_occupancy(model::AndersonModel, alg::NRGAlgorithm)
-    alg.symmetry isa U1U1 ||
-        throw(EngineUnimplemented("double_occupancy needs U1U1 (got $(typeof(alg.symmetry)))"))
+    alg.symmetry isa U1U1 || throw(
+        EngineUnimplemented("double_occupancy needs U1U1 (got $(typeof(alg.symmetry)))")
+    )
     chain = wilson_chain(alg.discretization, model, alg.nsites)
     sqrtΛ = sqrt(alg.discretization.Λ)
     st = impurity_init(model, U1U1(), chain)

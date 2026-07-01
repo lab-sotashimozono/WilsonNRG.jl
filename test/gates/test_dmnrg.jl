@@ -50,12 +50,15 @@ using WilsonNRG: _cfs_collect, _dmnrg_reduced_dms, _dmnrg_poles
     # ---- (5) interactions: sum rule + p–h survive; honest stub for U1SU2 ----
     @testset "U>0 + honest stub" begin
         U = 0.5
-        mU = AndersonModel(; U, εd=-U / 2, Γ, D=1.0)
-        pU = _dmnrg_poles(_cfs_collect(mU, alg), _dmnrg_reduced_dms(_cfs_collect(mU, alg)), 1)
+        mU = AndersonModel(; U, εd=(-U / 2), Γ, D=1.0)
+        pU = _dmnrg_poles(
+            _cfs_collect(mU, alg), _dmnrg_reduced_dms(_cfs_collect(mU, alg)), 1
+        )
         @test isapprox(sum(w for (_, w) in pU), 1.0; atol=1.0e-3)    # sum rule survives U>0
         rU = spectral(DMNRG(), mU, alg)
         npU = length(rU.ω) ÷ 2
-        @test maximum(abs, rU.A[(npU + 1):end] .- reverse(rU.A[1:npU])) < 1.0e-3 * maximum(rU.A)
+        @test maximum(abs, rU.A[(npU + 1):end] .- reverse(rU.A[1:npU])) <
+            1.0e-3 * maximum(rU.A)
         alg_su2 = NRGAlgorithm(; discretization=WilsonLog(2.5), symmetry=U1SU2(), nsites=5)
         @test_throws EngineUnimplemented green_function(DMNRG(), mU, alg_su2)
     end

@@ -118,9 +118,14 @@ Bulla–Costi–Pruschke RMP 80, 395 (2008), Eqs. 86–88). Uses the **off-diago
 matrix of the ground state (the coherences the ground-state-projector [`CFS`](@ref) drops), giving
 the exact sum rule `∫A_σ dω = 1` by the anticommutator. `U1U1`. `A(ω) = -Im G/π` is [`spectral`](@ref).
 """
-function green_function(::DMNRG, model::AndersonModel, alg::NRGAlgorithm; b::Real=0.6, ω=nothing)
-    alg.symmetry isa U1U1 ||
-        throw(EngineUnimplemented("DMNRG green_function needs U1U1 (got $(typeof(alg.symmetry)))"))
+function green_function(
+    ::DMNRG, model::AndersonModel, alg::NRGAlgorithm; b::Real=0.6, ω=nothing
+)
+    alg.symmetry isa U1U1 || throw(
+        EngineUnimplemented(
+            "DMNRG green_function needs U1U1 (got $(typeof(alg.symmetry)))"
+        ),
+    )
     ωs = ω === nothing ? _default_omega(model, alg) : collect(float.(ω))
     shells = _cfs_collect(model, alg)
     ρ = _dmnrg_reduced_dms(shells)

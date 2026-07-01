@@ -77,8 +77,11 @@ end
     # chains coincide; for z≠1 the fix bites and the chains differ. (Faithful to PRB 79.085106.)
     @test wilson_chain(CampoOliveira(2.5; z=1.0), model, 10).hopping ==
         wilson_chain(ZitkoPruschke(2.5; z=1.0), model, 10).hopping
-    @test maximum(abs, wilson_chain(CampoOliveira(2.5; z=0.5), model, 10).hopping .-
-                       wilson_chain(ZitkoPruschke(2.5; z=0.5), model, 10).hopping) > 1.0e-4
+    @test maximum(
+        abs,
+        wilson_chain(CampoOliveira(2.5; z=0.5), model, 10).hopping .-
+        wilson_chain(ZitkoPruschke(2.5; z=0.5), model, 10).hopping,
+    ) > 1.0e-4
 
     # ---- (4) an unwired discretization fails honestly (EngineUnimplemented, not MethodError) ----
     @test_throws EngineUnimplemented wilson_chain(_UnwiredDisc(2.5), model, 3)

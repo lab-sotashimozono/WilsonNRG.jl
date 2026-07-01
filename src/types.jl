@@ -47,8 +47,8 @@ struct AndersonModel <: AbstractImpurityModel
     Γ::Float64
     D::Float64
 end
-function AndersonModel(; U::Real, εd::Real=-U / 2, Γ::Real, D::Real=1.0)
-    AndersonModel(Float64(U), Float64(εd), Float64(Γ), Float64(D))
+function AndersonModel(; U::Real, εd::Real=(-U / 2), Γ::Real, D::Real=1.0)
+    return AndersonModel(Float64(U), Float64(εd), Float64(Γ), Float64(D))
 end
 
 """

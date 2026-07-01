@@ -44,7 +44,7 @@ function _shell_thermo(levels, β::Real, ::U1SU2)
     return (S=β * (Eav / Z) + log(Z), χT=Sz2 / Z)
 end
 function _shell_thermo(levels, β::Real, sym::AbstractSymmetry)
-    throw(EngineUnimplemented("thermodynamics not implemented for $(typeof(sym))"))
+    return throw(EngineUnimplemented("thermodynamics not implemented for $(typeof(sym))"))
 end
 
 _free_site(::AndersonModel) = AndersonModel(; U=0.0, εd=0.0, Γ=0.0, D=1.0)
@@ -140,7 +140,7 @@ function _shell_mag(levels, β::Real, zeeman::Real, ::U1SU2)
     return M / Z
 end
 function _shell_mag(levels, β::Real, zeeman::Real, sym::AbstractSymmetry)
-    throw(EngineUnimplemented("magnetization not implemented for $(typeof(sym))"))
+    return throw(EngineUnimplemented("magnetization not implemented for $(typeof(sym))"))
 end
 
 """

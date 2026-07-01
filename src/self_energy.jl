@@ -51,7 +51,7 @@ function self_energy(
     return _self_energy(via, method, model, alg, ωs, b, window; kw...)
 end
 function self_energy(model::AbstractImpurityModel, alg::NRGAlgorithm; kw...)
-    self_energy(default_spectral_method(), model, alg; kw...)
+    return self_energy(default_spectral_method(), model, alg; kw...)
 end
 
 # The trick needs the F-correlator, currently produced only by BHP — encoded in DISPATCH
@@ -66,7 +66,7 @@ end
 function _self_energy(
     ::SelfEnergyTrick, method::AbstractSpectralMethod, model, alg, ωs, b, window; kw...
 )
-    throw(
+    return throw(
         EngineUnimplemented(
             "the self-energy trick needs the F-correlator, currently produced only by BHP " *
             "(got $(typeof(method))); use via=Dyson() for a generic G-based self-energy",
@@ -82,11 +82,15 @@ function _safe_invG(z::Complex, floor::Real)
     a == 0 && return complex(1 / floor)
     return conj(z) / (a * floor)
 end
-function _self_energy(::Dyson, method::AbstractSpectralMethod, model, alg, ωs, b, window; kw...)
+function _self_energy(
+    ::Dyson, method::AbstractSpectralMethod, model, alg, ωs, b, window; kw...
+)
     G = green_function(method, model, alg; b, ω=ωs, kw...).G        # any spectral method's G
     Δ = hybridization_function.(Ref(model), ωs)
     gfloor = 1.0e-12 * maximum(abs, G)
-    return (; ω=ωs, Σ=[ωs[i] - model.εd - Δ[i] - _safe_invG(G[i], gfloor) for i in eachindex(ωs)])
+    return (;
+        ω=ωs, Σ=[ωs[i] - model.εd - Δ[i] - _safe_invG(G[i], gfloor) for i in eachindex(ωs)]
+    )
 end
 
 """
@@ -111,8 +115,8 @@ function compare_self_energy(
 )
     ωs = ω === nothing ? _default_omega(model, alg) : collect(float.(ω))
     Σ = Dict(
-        nameof(typeof(v)) => self_energy(method, model, alg; via=v, b, window, ω=ωs, kw...).Σ
-        for v in vias
+        nameof(typeof(v)) =>
+            self_energy(method, model, alg; via=v, b, window, ω=ωs, kw...).Σ for v in vias
     )
     near0 = findall(x -> abs(x) < 0.1, ωs)
     ks = collect(keys(Σ))

@@ -18,7 +18,7 @@ using WilsonNRG, Test
     # ---- (1) trick at U>0 symmetric point: Fermi-liquid / Friedel ----
     @testset "trick: ReΣ(0)=U/2, ImΣ(0)=0 (Fermi liquid)" begin
         U = 0.5
-        m = AndersonModel(; U, εd=-U / 2, Γ=0.1, D=1.0)
+        m = AndersonModel(; U, εd=(-U / 2), Γ=0.1, D=1.0)
         se = self_energy(m, alg)                       # default = BHP green + SelfEnergyTrick
         ip = near(se.ω, 0.02)
         im_ = near(se.ω, -0.02)

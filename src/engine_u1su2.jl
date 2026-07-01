@@ -22,8 +22,14 @@
 using LinearAlgebra: Symmetric, eigen
 
 # electron-site spin reduced MEs ⟨s′‖f†_site‖s⟩ and the conjugate annihilation ⟨b‖f̃‖a⟩
-_su2_fdag(s, sp) = (s == 0 // 1 && sp == 1 // 2) ? 1.0 :
-                   (s == 1 // 2 && sp == 0 // 1) ? -sqrt(2.0) : 0.0
+_su2_fdag(s, sp) =
+    if (s == 0 // 1 && sp == 1 // 2)
+        1.0
+    elseif (s == 1 // 2 && sp == 0 // 1)
+        -sqrt(2.0)
+    else
+        0.0
+    end
 function _su2_ftil(sa, sb)
     f = _su2_fdag(sb, sa)              # 0 unless |sa−sb|=½, where the phase exponent is integer
     f == 0.0 && return 0.0
@@ -102,9 +108,7 @@ end
 
 # ---- impurity (iteration −1): the 3-multiplet Anderson impurity ----
 function impurity_init(m::AndersonModel, ::U1SU2, ::WilsonChain)
-    E = Dict(
-        (0, 0 // 1) => [0.0], (1, 1 // 2) => [m.εd], (2, 0 // 1) => [2 * m.εd + m.U]
-    )
+    E = Dict((0, 0 // 1) => [0.0], (1, 1 // 2) => [m.εd], (2, 0 // 1) => [2 * m.εd + m.U])
     F = Dict(
         (0, 0 // 1, 1 // 2) => fill(1.0, 1, 1),       # ⟨(1,½)‖d†‖(0,0)⟩ = 1
         (1, 1 // 2, 0 // 1) => fill(-sqrt(2.0), 1, 1), # ⟨(2,0)‖d†‖(1,½)⟩ = −√2
@@ -148,8 +152,11 @@ function add_site(st::U1SU2State, ::U1SU2; coupling::Real, rescale::Real, onsite
             haskey(st.F, (Qk, Sk, Sk2)) || continue
             Fm = st.F[(Qk, Sk, Sk2)]
             coef =
-                coupling * (-1.0)^(s2 + Sk + S + 1 // 2) * sqrt((2Sk2 + 1) * (2s2 + 1)) *
-                wigner6j(Sk2, s2, S, s, Sk, 1 // 2) * _su2_ftil(s, s2)
+                coupling *
+                (-1.0)^(s2 + Sk + S + 1 // 2) *
+                sqrt((2Sk2 + 1) * (2s2 + 1)) *
+                wigner6j(Sk2, s2, S, s, Sk, 1 // 2) *
+                _su2_ftil(s, s2)
             for (a, ib) in enumerate(r2), (b, ik) in enumerate(r)
                 Hb[ib, ik] += coef * Fm[a, b]
                 Hb[ik, ib] += coef * Fm[a, b]                 # h.c. (real symmetric)
@@ -188,7 +195,7 @@ function update_operators(diag::U1SU2Diag, plan::Dict{K,Vector{Int}}, ::U1SU2) w
         Vk[qn] = diag.vecs[qn][:, idx]
     end
     isempty(Enew) && throw(
-        ArgumentError("truncation kept no states; loosen EnergyCut or increase KeepN"),
+        ArgumentError("truncation kept no states; loosen EnergyCut or increase KeepN")
     )
     g = minimum(minimum, values(Enew))
     for qn in keys(Enew)
