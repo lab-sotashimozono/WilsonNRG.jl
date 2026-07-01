@@ -246,13 +246,16 @@ differ in `εd` and/or `U`. `U1U1` only.
 Two routes, selected by `alg.truncation`:
 
 - `KeepN(typemax(Int))` — the **exact keep-all** evaluation on a short chain (`alg.nsites` ≲ 7):
-  |G_i⟩ in the full last-shell H_f basis, single-shell phase sum. Assumes a non-degenerate
-  `initial` ground state.
+  |G_i⟩ in the full last-shell H_f basis, single-shell phase sum. Assumes a **non-degenerate**
+  `initial` ground state (a single `findfirst` pick).
 - any real `KeepN` — the **truncated complete-basis** method (Anders–Schiller Eq. 3, scalable to
   long chains): the discarded-state complete-Fock-space sum with the off-diagonal reduced density
   matrix (reuses the DM-NRG machinery, [`green_function`](@ref)`(::DMNRG, …)`). Reduces to the
   keep-all answer as `KeepN`↑; the residual at fixed `KeepN` is the NRG truncation error (which
-  the paper further reduces by z-averaging and the Eq. 5 damping).
+  the paper further reduces by z-averaging and the Eq. 5 damping). This path is
+  **degenerate-ground-state-safe** — it inherits the DM-NRG ensemble average (the `T→0⁺` mixed
+  state over a degenerate `initial` multiplet), so it may legitimately differ from the keep-all
+  path when the `initial` ground state is degenerate.
 
 Checks: `⟨n_d(0)⟩ = ⟨n_d⟩` of `initial` ([`occupation`](@ref), the overlap is complete); at U=0
 `⟨n_d(t)⟩` is the exact single-particle quench dynamics; the long-time signal relaxes toward the
@@ -267,6 +270,14 @@ function quench_dynamics(
     (initial.Γ == final.Γ && initial.D == final.D) || throw(
         ArgumentError(
             "quench_dynamics: initial and final must share the bath (Γ, D) — the Wilson chain is common",
+        ),
+    )
+    # both runs must index the chain identically: shell m ↔ the same physical site n in each run,
+    # so the shared ωₘ = Λ^{-(n0+m-1)/2} energy scale is well-defined (holds for any AndersonModel
+    # pair today; guards a future signature that mixed impurity types with different bath-in-init).
+    bath_sites_in_init(initial) == bath_sites_in_init(final) || throw(
+        ArgumentError(
+            "quench_dynamics: initial and final must have the same bath_sites_in_init (shared chain indexing)",
         ),
     )
     return if _is_keepall(alg.truncation)
