@@ -221,7 +221,15 @@ function wilson_ratio(
     tm = thermodynamics(model, alg; betabar)
     tf = thermodynamics(free, alg; betabar)
     R = (tm.Tχ_imp ./ tm.S_imp) ./ (tf.Tχ_imp ./ tf.S_imp)
-    fl = [k for k in eachindex(tm.T) if s_lo < tm.S_imp[k] < s_hi]   # Fermi-liquid plateau
-    R_fp = isempty(fl) ? NaN : _median(R[fl])
-    return (; T=tm.T, R, R_fp)
+    # Fermi-liquid plateau: model entropy in the window AND a PHYSICAL ratio 0.5 < R < 4 — the
+    # Wilson ratio is O(1) (free 1 → Kondo 2), so this rejects shells where the free-reference
+    # denominator crosses the two-run noise floor (near-zero S_free ⇒ |R| huge/negative), which
+    # would otherwise silently poison the median (independent of s_hi).
+    fl = [k for k in eachindex(tm.T) if s_lo < tm.S_imp[k] < s_hi && 0.5 < R[k] < 4.0]
+    if isempty(fl)
+        @warn "wilson_ratio: no Fermi-liquid plateau found (chain too short, or s_lo/s_hi off?)" s_lo s_hi nsites =
+            alg.nsites
+        return (; T=tm.T, R, R_fp=NaN)
+    end
+    return (; T=tm.T, R, R_fp=_median(R[fl]))
 end
