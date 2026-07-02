@@ -171,6 +171,12 @@ function green_function(
     ω=nothing,
     ω0=nothing,
 )
+    # U1U1-only by design: the non-abelian FINITE-T reduced density matrix needs the QSpace
+    # (2S+1) multiplet-weight bookkeeping (per-multiplet ρ = (2S+1)·boltz·4^{N−n}/Z with a
+    # multiplet-dim-consistent backward sweep), which is not yet machine-precise here — a 4-way
+    # weight sweep brackets ∫A=1 but the pointwise error accumulates per shell. So U1SU2 finite-T
+    # is deferred to future QSpace work; U1SU2 EQUILIBRIUM dynamics use CFS (T=0, exact) + the
+    # exact self-energy trick. (See the module docstring's "Scope & limitations".)
     alg.symmetry isa U1U1 || throw(
         EngineUnimplemented("FDM green_function needs U1U1 (got $(typeof(alg.symmetry)))"),
     )

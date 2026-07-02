@@ -4,20 +4,44 @@
 A generic numerical renormalization group (NRG) *scheme* — organised the way
 DMRG is: one model-agnostic driver ([`nrg_solve`](@ref)) over orthogonal
 *formulation* axes, each a small abstract-type family with one concrete type per
-published method.
+published method (each type's citation is its faithfulness gate).
 
-    Axis 1  AbstractImpurityModel   — the physics            (AndersonModel, …)
-    Axis 2  AbstractDiscretization  — Δ(ω) ↦ Wilson chain     (WilsonLog, …)
-    Axis 3  AbstractSymmetry        — block / multiplet form  (U1U1, …)
-    Axis 4  AbstractSpectralMethod  — eigenflow ↦ A(ω)        (FDM, …)
+    Axis 1  AbstractImpurityModel   — the physics            AndersonModel, KondoModel
+    Axis 2  AbstractDiscretization  — Δ(ω) ↦ Wilson chain     WilsonLog, CampoOliveira, ZitkoPruschke
+    Axis 3  AbstractSymmetry        — block / multiplet form  U1U1, U1SU2, SU2SU2
+    Axis 4  AbstractSpectralMethod  — eigenflow ↦ A(ω)        BHP, CFS, FDM, DMNRG
 
-Implemented now: the U=0 analytic bootstrap and the `WilsonLog` discretization,
-each behind a faithfulness gate. The many-body engine lands per the staged
-roadmap (see the docs); until then [`nrg_solve`](@ref) raises
-[`EngineUnimplemented`](@ref) for the unwired symmetries.
+On top of the axes: thermodynamics (entropy, χ, Wilson ratio `R=2`) and
+magnetization; the self-energy `Σ(ω)` (`self_energy`, trick + Dyson) and the
+self-energy-improved Green's function (`improved_green_function`); z-averaged
+spectra (Žitko–Pruschke / Oliveira–Oliveira); the NRG-as-MPS structural
+reproduction (`nrg_mps`, Saberi 2008); and Kondo-physics validation gates
+(`T_K`, universal scaling, Friedel `πΓA(0)=1`).
 
-An optional `ITensorMPS` bridge (NRG-as-MPS, Saberi–Weichselbaum–von Delft 2008)
-is provided as a package extension and loads only when `ITensorMPS` is present.
+# Scope & limitations (deliberate — read before trusting a number)
+This reproduces the *established single-impurity, single-channel, equilibrium*
+NRG genealogy: a benchmark / teaching engine, NOT a production DMFT solver.
+
+  * **Bath** — flat band, constant hybridization `Δ(ω)=Γ` for `|ω|<D`. There is no
+    arbitrary `Δ(ω)` / general-DOS Wilson chain, hence no DMFT self-consistency and
+    no multi-orbital or multi-channel impurity — the rungs a DFT+DMFT bath solver
+    would add next.
+  * **Resolution** — single-`z`, moderate `Λ`. The *direct* `A(ω)` is
+    broadening-limited (the log-Gaussian washes the `~T_K`-narrow Kondo peak), so
+    the Friedel unitary limit `πΓA(0)=1` is recovered via `improved_green_function`
+    (`ReΣ(0)=U/2` pins it — the standard accurate route) or by z-averaging, NOT from
+    the bare `A(ω)`. Exact pointwise shape wants small `Λ` + many `z`.
+  * **Non-abelian finite T** — `FDM` / `DMNRG` are `U1U1`-only (they raise
+    `EngineUnimplemented` for other symmetries): the non-abelian thermal reduced
+    density matrix needs the QSpace `(2S+1)` multiplet-weight bookkeeping, which is
+    not yet machine-precise here. `U1SU2` dynamics are served instead by `CFS`
+    (T=0, exact) plus the exact self-energy trick.
+  * **SU2SU2 spectra** (the charge-SU(2) Nambu double-tensor) are not implemented.
+  * **Method artifacts** — the BHP windowed particle–hole break at `U>0` and the
+    single-`z` occupation floor — are catalogued on the docs "Known limitations" page.
+
+The NRG-as-MPS reproduction is pure `LinearAlgebra` (exact for small chains); a
+QSpace / `ITensorMPS`-scale bridge is a future extension, not present today.
 """
 module WilsonNRG
 

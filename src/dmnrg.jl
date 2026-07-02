@@ -121,6 +121,9 @@ the exact sum rule `∫A_σ dω = 1` by the anticommutator. `U1U1`. `A(ω) = -Im
 function green_function(
     ::DMNRG, model::AndersonModel, alg::NRGAlgorithm; b::Real=0.6, ω=nothing
 )
+    # U1U1-only by design, same reason as FDM: the non-abelian finite-T reduced density matrix
+    # needs the QSpace (2S+1) multiplet-weight bookkeeping (not yet machine-precise here). U1SU2
+    # finite-T is deferred; use CFS (T=0, exact) + the self-energy trick for U1SU2 dynamics.
     alg.symmetry isa U1U1 || throw(
         EngineUnimplemented(
             "DMNRG green_function needs U1U1 (got $(typeof(alg.symmetry)))"
