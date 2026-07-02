@@ -111,7 +111,7 @@ function impurity_solve(s::NRGSolver, model::AndersonModel; ω=nothing, kw...)
     )
 end
 function impurity_solve(model::AbstractImpurityModel; kw...)
-    impurity_solve(NRGSolver(), model; kw...)
+    return impurity_solve(NRGSolver(), model; kw...)
 end
 # open-contract fallback: a solver/model pair with no self-energy route refuses cleanly
 function impurity_solve(::AbstractImpuritySolver, model::AbstractImpurityModel; kw...)

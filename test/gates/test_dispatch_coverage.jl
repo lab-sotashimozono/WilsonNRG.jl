@@ -24,9 +24,8 @@ end
     discs = (WilsonLog(2.5), CampoOliveira(2.5), ZitkoPruschke(2.5))
     And = AndersonModel(; U=0.3, εd=-0.15, Γ, D)
     Kon = KondoModel(; J=0.2, D)
-    alg(d, s; tr=KeepN(150), n=6) = NRGAlgorithm(;
-        discretization=d, symmetry=s, truncation=tr, nsites=n
-    )
+    alg(d, s; tr=KeepN(150), n=6) =
+        NRGAlgorithm(; discretization=d, symmetry=s, truncation=tr, nsites=n)
 
     # ---- (a) INVARIANT: NO hidden gaps anywhere in the cross-product (the load-bearing check) ----
     @testset "no hidden dispatch gaps across the axes" begin
