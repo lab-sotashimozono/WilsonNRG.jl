@@ -40,6 +40,7 @@ export wilson_chain, asymptotic_hopping, hybridization, bath_coupling, nrg_solve
 export band_dos
 export shell_scale, thermodynamics, magnetization, wilson_ratio
 export green_function, self_energy, hybridization_function, compare_self_energy
+export improved_green_function
 export zavg_green_function, zavg_spectral
 export occupation, double_occupancy, quench_dynamics
 export default_spectral_method, default_self_energy_method
