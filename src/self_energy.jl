@@ -61,11 +61,15 @@ end
 # (a (::SelfEnergyTrick, ::BHP) method + an AbstractSpectralMethod fallback that throws) rather
 # than a runtime `isa` guard, so the precondition is a dispatch invariant.
 function _self_energy(::SelfEnergyTrick, ::BHP, model, alg, ωs, b, window; kw...)
-    poles = _gf_poles(model, alg; window, with_F=true)
+    poles = _trick_poles(alg.symmetry, model, alg, window)     # G/F windowed poles, symmetry-dispatched
     G = _correlator(poles, ωs, b, 2)
     F = _correlator(poles, ωs, b, 3)
     return (; ω=ωs, Σ=model.U .* F ./ G)
 end
+# windowed G/F poles for the trick: U1U1 sums the (Q,2Sz,σ) blocks; U1SU2 (spectral_su2.jl)
+# propagates the impurity d† AND the compound O_F = n_↓ d†_↑ as spin-½ tensors (the CG weight
+# cancels in F/G, so Σ=U·F/G stays exact — ReΣ(0)=U/2 — even though the windowed G alone is crude).
+_trick_poles(::U1U1, model, alg, window) = _gf_poles(model, alg; window, with_F=true)
 function _self_energy(
     ::SelfEnergyTrick, method::AbstractSpectralMethod, model, alg, ωs, b, window; kw...
 )
