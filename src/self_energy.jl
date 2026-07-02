@@ -46,7 +46,10 @@ function self_energy(
     ω=nothing,
     kw...,
 )
-    alg.symmetry isa U1U1 || throw(EngineUnimplemented("self_energy needs U1U1"))
+    # Symmetry support is enforced PER PATH, not blanket: the trick's `_gf_poles` needs `U1U1`
+    # (the BHP F-correlator indexes the (Q,2Sz,σ) blocks), while `Dyson` delegates to
+    # `green_function`, which now also supports `U1SU2` (cfs_su2.jl) — so `Dyson` via `CFS`/`FDM`
+    # yields the U1SU2 self-energy for free, and the trick still refuses non-U1U1 honestly.
     ωs = ω === nothing ? _default_omega(model, alg) : collect(float.(ω))
     return _self_energy(via, method, model, alg, ωs, b, window; kw...)
 end
