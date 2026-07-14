@@ -5,7 +5,7 @@
 reproduces, and every faithfulness gate reproduces a value from that paper. A reproduction is
 only as good as its citation — so the citation must be **precise** and **checked against the
 paper itself** (no-cite-without-reproduction). This is the literature counterpart of "tests must
-check an independent answer". Design adapted from [QAtlas.jl](https://github.com/sotashimozono/QAtlas.jl).
+check an independent answer". Design adapted from [QAtlas.jl](https://github.com/QAtlasHub/QAtlas.jl).
 
 ## 1. Cite a precise reference + equation, not "Author (Year)"
 
