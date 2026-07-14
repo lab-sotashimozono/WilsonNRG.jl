@@ -37,7 +37,7 @@ tolerance); the tight ∫A = 1 and p-h targets are asserted on the complete-basi
 and BHP keeps only a loose sanity floor on its sum rule. Prefer `CFS` / `FDM` / `DMNRG`
 for U > 0 spectra. The natural fix is an opt-in post-symmetrization
 A(ω) → ½·[A(ω) + A(−ω)] at the symmetric point.
-Tracking: [issue #33](https://github.com/sotashimozono/WilsonNRG.jl/issues/33).
+Tracking: [issue #33](https://github.com/lab-sotashimozono/WilsonNRG.jl/issues/33).
 
 **References.** Bulla, Hewson & Pruschke, *J. Phys.: Condens. Matter* **10**, 8365
 (1998); Bulla, Costi & Pruschke, *Rev. Mod. Phys.* **80**, 395 (2008).
@@ -67,7 +67,7 @@ content is carried instead by the exact spin pin, the Fermi-liquid self-energy p
 ReΣ(0) = U/2, and the many-body spectrum blocks E[(Q,D)] = E[(2N−Q,D)]. Reaching sub-%
 accuracy needs z-averaging of `occupation` (and/or a Λ → 1 extrapolation), the standard
 route for high-precision static NRG properties.
-Tracking: [issue #34](https://github.com/sotashimozono/WilsonNRG.jl/issues/34).
+Tracking: [issue #34](https://github.com/lab-sotashimozono/WilsonNRG.jl/issues/34).
 
 **References.** Krishna-murthy, Wilkins & Wilson, *Phys. Rev. B* **21**, 1044 (1980);
 Žitko & Pruschke, *Phys. Rev. B* **79**, 085106 (2009).

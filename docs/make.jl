@@ -40,7 +40,7 @@ makedocs(;
 
 deploydocs(;
     versions=["stable", "dev"],
-    repo="github.com/sotashimozono/WilsonNRG.jl.git",
+    repo="github.com/lab-sotashimozono/WilsonNRG.jl.git",
     devbranch="main",
     push_preview=true,
 )
