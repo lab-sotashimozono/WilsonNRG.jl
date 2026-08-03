@@ -2,69 +2,33 @@ ENV["GKSwstype"] = "100"
 
 using WilsonNRG
 using Test, Aqua
+using TestShards
 
-include(joinpath(@__DIR__, "ci", "universe.jl"))     # ALL_TEST_FILES, test_file_key (WHAT to run)
-
-# ── Test selection: FILES > ALL ──────────────────────────────────────
-#   WILSONNRG_TEST_FILES="gates/test_a.jl,gates/test_b.jl" — explicit list emitted by the LPT shard
-#       planner (test/ci/plan_shards.jl).  MUST be a subset of the canonical universe.
-#   neither  — run everything (local `Pkg.test()` and the round-robin fallback).
-# Aqua (whole-package QA) runs in exactly one selection: FILES → WILSONNRG_RUN_AQUA=1 ; ALL → yes.
-const _test_files = get(ENV, "WILSONNRG_TEST_FILES", "")
-const _selected, _mode, _run_aqua = if !isempty(_test_files)
-    want = [strip(x) for x in split(_test_files, ",") if !isempty(strip(x))]
-    idx = Dict(test_file_key(d, f) => (d, f) for (d, f) in ALL_TEST_FILES)
-    sel = Tuple{String,String}[]
-    unknown = String[]
-    for w in want
-        haskey(idx, w) ? push!(sel, idx[w]) : push!(unknown, String(w))
-    end
-    isempty(unknown) || error(
-        "WILSONNRG_TEST_FILES lists files outside the canonical universe (planner must only emit " *
-        "globbed files): $(unknown)",
-    )
-    (sel, "FILES (n=$(length(sel)))", get(ENV, "WILSONNRG_RUN_AQUA", "0") == "1")
-else
-    (ALL_TEST_FILES, "ALL", true)
-end
-println(
-    "Test selection: $(_mode) → $(length(_selected))/$(length(ALL_TEST_FILES)) files; aqua=$(_run_aqua)",
-)
-
-const FIG_BASE = joinpath(pkgdir(WilsonNRG), "docs", "src", "assets")
-
-# Per-file wall-time, captured for the timing plane (HOW-to-split the next run).
-const _TIMINGS = Dict{String,Float64}()
-
-@testset "tests" begin
-    if _run_aqua
-        @testset "Aqua tests" begin
-            _TIMINGS["__aqua__"] = @elapsed Aqua.test_all(WilsonNRG)
-            println("  Aqua: $(round(_TIMINGS["__aqua__"]; digits=2)) s")
+# Every `test_*.jl` under `test/`, in a deterministic order, each one its own shardable unit.
+# `@shard` shadows `include` inside the block, so a unit is whatever this loop includes — a new
+# file, or a whole new directory, is picked up BY BEING ON DISK. That is what the old
+# `test/ci/universe.jl` completeness guard existed to enforce by hand, and it could only ever
+# ERROR, because the wiring lived in a second list that could disagree with the tree.
+#
+# Two rules when adding to this, and they are the only two:
+#
+#   1. SHARED FIXTURES GO ABOVE THIS BLOCK. A helper included inside becomes a unit of its own,
+#      lands on ONE shard, and every test file on the other shards that needed it fails.
+#   2. ANYTHING THAT IS NOT A `test_*.jl` FILE MUST BE NAMED, as Aqua is below. The glob does not
+#      error on what it does not match; it silently stops running it.
+#
+# A bare `Pkg.test()` with nothing set in the environment runs all of it, in this order. Run one
+# shard locally with `TESTSHARDS_ID=s3 TESTSHARDS_N=16 julia --project -e 'using Pkg; Pkg.test()'`.
+TestShards.@shard begin
+    for (dir, _, files) in sort!(collect(walkdir(@__DIR__)); by=first)
+        for f in sort(files)
+            startswith(f, "test_") && endswith(f, ".jl") || continue
+            include(joinpath(dir, f))
         end
     end
-    @time for (d, f) in _selected
-        key = test_file_key(d, f)
-        @testset "$(key)" begin
-            println("  Including test/$(key)")
-            _TIMINGS[key] = @elapsed include(joinpath(@__DIR__, d, f))
-            println("  $(key): $(round(_TIMINGS[key]; digits=2)) s")
-        end
+    # Whole-package QA. It is not a file, so `@unit` gives it a key of its own and it becomes an
+    # ordinary shardable unit — it used to be pinned to whichever shard carried the `aqua` flag.
+    TestShards.@unit "aqua" begin
+        Aqua.test_all(WilsonNRG)
     end
-end
-
-# Emit per-shard timing as TSV (key<TAB>seconds).  Gated by WILSONNRG_EMIT so only push:main CI
-# writes; PR/local runs never persist.  The record-timings job merges these into the `ci-timings`
-# orphan branch; the planner LPT-bin-packs the next run from it (round-robin until then).
-if get(ENV, "WILSONNRG_EMIT", "0") == "1"
-    outdir = get(ENV, "WILSONNRG_CIOUT_DIR", joinpath(@__DIR__, ".ci-out"))
-    mkpath(outdir)
-    sid = isempty(_test_files) ? "all" : string(hash(_test_files); base=16)
-    tf = joinpath(outdir, "timings-$(sid).tsv")
-    open(tf, "w") do io
-        for (k, v) in sort!(collect(_TIMINGS); by=first)
-            println(io, k, '\t', round(v; digits=4))
-        end
-    end
-    println("Emitted timing TSV -> ", abspath(tf), " (", length(_TIMINGS), " entries)")
 end
