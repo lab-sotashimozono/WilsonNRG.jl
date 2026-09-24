@@ -4,3 +4,4 @@ harness.toml
 .harness/
 Manifest.toml
 test/.ci-out/
+examples/*/out/

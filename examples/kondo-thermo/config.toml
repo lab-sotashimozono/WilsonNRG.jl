@@ -1,0 +1,15 @@
+# kondo-thermo — impurity thermodynamics of the symmetric Anderson model (εd = -U/2) as U/Γ is
+# raised: the Kondo scale falls exponentially, so screening sets in later along the NRG flow.
+# Γ, Λ, the truncation and the chain length are fixed; only U/Γ is swept.
+[study]
+project_name  = "kondo-thermo"
+total_samples = 1
+outdir        = "out"
+
+[datavault]
+path_keys = ["model.u_over_gamma"]
+
+[[paramsets]]
+[paramsets.model]
+u_over_gamma = [0.0, 2.0, 4.0, 6.0, 8.0]
+gamma        = 0.03

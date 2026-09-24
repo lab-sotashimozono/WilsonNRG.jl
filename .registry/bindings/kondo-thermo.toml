@@ -1,0 +1,6 @@
+kind = "report"
+project = "afa96d7e-4e77-4a09-a7af-73dc5c56e7ca"
+record = "da5ca41f-b6c3-4203-93a7-6384ddf0106c"
+registry = "../../../../archeion-demo"
+slug = "kondo-thermo"
+spec = "registry/2"
